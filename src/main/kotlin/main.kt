@@ -5,7 +5,8 @@ fun main (){
     var post = Post()
     WallService.add(post)
     WallService.add(post)
-    WallService.update(post.postLikes() )
+    WallService.likedById(post.id)
+    WallService.update(post)
 }
 data class Post(
     val id: Int=0,//Идентификатор записи.
@@ -27,29 +28,34 @@ data class Post(
     val is_favorite: Boolean=false,//true, если объект добавлен в закладки у текущего пользователя.
     val postponed_id: Int=0,//Идентификатор отложенной записи. Это поле возвращается тогда, когда запись стояла на таймере.
     var postComments: comments = comments(),//Информация о комментариях к записи, объект с полями
-    var postlikes: likes=likes()//Информация о лайках к записи, объект с полями
+    var postLikes: likes=likes()//Информация о лайках к записи, объект с полями
 )
 
 
 object WallService{
-    private var posts = emptyArray<Post>()
-    private var lastId = 0
+    var posts = emptyArray<Post>()
+    var lastId = 0
+    val Error_Limit=-1
     fun add (post: Post): Post {
-        //post.id= lastId++
-        posts += post.copy(id= lastId++,postComments=post.postComments.copy())
+        if (lastId>2147483647){
+            println("Переполнение счётчика постов")
+        } else {
+            posts += post.copy(id= lastId++, postComments = post.postComments.copy())
+        }
         return  posts.last()
     }
     fun likedById(id: Int){
         for ((index, post) in posts.withIndex()){
-            if (post.id==id){
-                posts[index]=post.copy(postComments = post.postComments.copy())
+            if (post.id==id && post.postLikes.can_likes==true && post.postLikes.user_likes==true && post.postLikes.can_publish==true ){
+                post.postLikes.count = post.postLikes.count++
+                posts[index]=post.copy(postLikes = post.postLikes.copy())
             }
         }
     }
     fun update(newPost:Post): Boolean {
         for ((index, post) in posts.withIndex()){
             if (post.id==newPost.id){
-                posts[index]=newPost.copy(postComments = newPost.postComments.copy())
+                posts[index]=post.copy(postComments = newPost.postComments.copy())
                 return true
             }
         }
@@ -57,16 +63,16 @@ object WallService{
     }
 }
 data class comments (
-    val count: Int=0,
-    val can_post: Boolean=false,
-    val groups_can_post: Boolean=false,
-    val can_close: Boolean=false,
-    val can_open: Boolean=false,
-    val newComment: String ="New comment"
+    var count: Int=0,
+    var can_post: Boolean=false,
+    var groups_can_post: Boolean=false,
+    var can_close: Boolean=false,
+    var can_open: Boolean=false,
+    var newComment: String ="New comment"
 )
 data class likes(
-    val count: Int=0,
-    val user_likes: Boolean=false,
-    val can_likes: Boolean=false,
-    val can_publish: Boolean=false
+    var count: Int=0,//число пользователей, которым понравилась запись
+    var user_likes: Boolean=false,//наличие отметки «Мне нравится» от текущего пользователя;
+    var can_likes: Boolean=false,//информация о том, может ли текущий пользователь поставить отметку «Мне нравится» ;
+    var can_publish: Boolean=false//информация о том, может ли текущий пользователь сделать репост записи .
 )

@@ -1,8 +1,10 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.21'
+    id 'application'
+    id 'jacoco'
 }
 
-group = 'org.example'
+group = 'ru.netology'
 version = '1.0-SNAPSHOT'
 
 repositories {
@@ -10,13 +12,16 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.testng:testng:7.1.0'
 }
 
-test {
-    useJUnitPlatform()
-}
 
 kotlin {
     jvmToolchain(8)
+}
+
+application {
+    mainClassName = 'MainKtTest'
 }
