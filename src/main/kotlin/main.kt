@@ -33,7 +33,7 @@ data class Post(
 
 
 object WallService{
-    private var posts = emptyArray<Post>()
+    var posts = emptyArray<Post>()
     var lastId = 0
     //val ErrorLimit=-1
     fun clear(){

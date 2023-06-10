@@ -29,7 +29,7 @@ class WallServiceTest {
             postComments = Comments(count = 0,canPost = true,groupsCanPost = true,canClose = true,canOpen = true, newComment ="Good"),
             postLikes = Likes(count = 0,userLikes = true,canLikes = true,canPublish = true) )
         WallService.add(post)
-        val result=1
+        //val result=1
         val count:Double= Math.random()
         val newId: Int = (count * (WallService.lastId-1)).toInt()
         var newPost = WallService.posts[newId]
