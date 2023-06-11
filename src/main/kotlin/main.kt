@@ -2,7 +2,10 @@ import java.util.Objects
 import javax.xml.stream.events.Comment
 
 fun main (){
-    var post = Post()
+    var post = Post(0,0,0,0,1254,"",0,
+        0,false,"post",0,false,false,
+        false, false, false,false, 0,
+        Comments(),Likes(), Copyright(), Reposts(), arrayOf(0))
     WallService.add(post)
     WallService.add(post)
     WallService.likedById(post.id)
@@ -11,10 +14,10 @@ fun main (){
 data class Post(
     val id: Int=0,//Идентификатор записи.
     val ownerId: Int=0,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
-    val fromId: Int=0,//Идентификатор автора записи (от чьего имени опубликована запись).
+    val fromId: Int?,//Идентификатор автора записи (от чьего имени опубликована запись).
     val createdBy: Int=0,//Идентификатор администратора, который опубликовал запись (возвращается только для сообществ при запросе с ключом доступа администратора). Возвращается в записях, опубликованных менее 24 часов назад.
-    val date: Int=1254,//Время публикации записи в формате unixtime.
-    val text: String="Good",//Текст записи.
+    val date: Int?,//Время публикации записи в формате unixtime.
+    val text: String?,//Текст записи.
     val replyOwnerId: Int=0,//Идентификатор владельца записи, в ответ на которую была оставлена текущая.
     val replyPostId:Int=0,//Идентификатор записи, в ответ на которую была оставлена текущая.
     val friendsOunly: Boolean=false,//true, если запись была создана с опцией «Только для друзей».
@@ -28,7 +31,10 @@ data class Post(
     val isFavorite: Boolean=false,//true, если объект добавлен в закладки у текущего пользователя.
     val postPonedId: Int=0,//Идентификатор отложенной записи. Это поле возвращается тогда, когда запись стояла на таймере.
     var postComments: Comments = Comments(),//Информация о комментариях к записи, объект с полями
-    var postLikes: Likes=Likes()//Информация о лайках к записи, объект с полями
+    var postLikes: Likes=Likes(),//Информация о лайках к записи
+    var postCopyright: Copyright=Copyright(),//Источник материала
+    var postReposts: Reposts= Reposts(),//Информация о репостах записи («Рассказать друзьям»), объект с полями:
+    var views: Array<Int> = arrayOf(0)
 )
 
 
@@ -41,10 +47,10 @@ object WallService{
         lastId = 0
     }
     fun add (post: Post): Post {
-        if (lastId>2147483647){
+        if (lastId>2147483646){
             println("Переполнение счётчика постов")
         } else {
-            posts += post.copy(id= lastId++, postComments = post.postComments.copy())
+            posts += post.copy(id= ++lastId, postComments = post.postComments.copy())
         }
         return  posts.last()
     }
@@ -67,11 +73,11 @@ object WallService{
     }
 }
 data class Comments (
-    var count: Int=0,
-    var canPost: Boolean=false,
-    var groupsCanPost: Boolean=false,
-    var canClose: Boolean=false,
-    var canOpen: Boolean=false,
+    var count: Int=0,//количество комментариев
+    var canPost: Boolean=false,//информация о том, может ли текущий пользователь комментировать запись
+    var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
+    var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
+    var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
     var newComment: String ="New comment"
 )
 data class Likes(
@@ -80,3 +86,14 @@ data class Likes(
     var canLikes: Boolean=false,//информация о том, может ли текущий пользователь поставить отметку «Мне нравится» ;
     var canPublish: Boolean=false//информация о том, может ли текущий пользователь сделать репост записи .
 )
+data class Copyright(
+    var id: Int=0,
+    var link: String="Link",
+    var name: String="Name",
+    var type: String="Type"
+)
+data class Reposts(//Информация о репостах записи («Рассказать друзьям»), объект с полями:
+    var count: Int=0,//число пользователей, скопировавших запись;
+    var userReposted: Int=0//наличие репоста от текущего пользователя
+)
+
