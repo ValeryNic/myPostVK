@@ -1,4 +1,5 @@
 import java.awt.Image
+import java.lang.RuntimeException
 import java.security.CodeSource
 import java.util.Objects
 import javax.xml.stream.events.Comment
@@ -8,15 +9,16 @@ fun main (){
     var post = Post(0,0,0,0,1254,"",0,
         0,false,"post",0,false,false,
         false, false, false,false, 0,
-        Comments(),Likes(), Copyright(), Reposts(), views = arrayOf(),
-         copyHistory= arrayOf(0), postDonut = Donut(), attechments = arrayOf()
+        postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
+        postReposts = RepostsPost(), views = arrayOf(),
+         copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
     )
     WallService.add(post)
     WallService.add(post)
     WallService.likedById(post.id)
     WallService.update(post)
     post.id=1
-    post.postComments.newComment="Good update"
+    //post.postComments.Comment[post.postComments.count]="Good update"
     WallService.update(post)
     //WallService.update(Post(1, fromId = 1, date=1254, text = "New update"))
     WallService.print()
@@ -41,15 +43,15 @@ data class Post(
     val markerAsAds: Boolean=false,//Информация о том, содержит ли запись отметку «реклама»
     val isFavorite: Boolean=false,//true, если объект добавлен в закладки у текущего пользователя.
     val postPonedId: Int=0,//Идентификатор отложенной записи. Это поле возвращается тогда, когда запись стояла на таймере.
-    var postComments: Comments = Comments(),//Информация о комментариях к записи, объект с полями
+    val postDonut: DonutPost=DonutPost(),
+    var postComments: CommentsPost = CommentsPost(),//Информация о комментариях к записи, объект с полями
     var postLikes: Likes=Likes(),//Информация о лайках к записи
-    var postCopyright: Copyright=Copyright(),//Источник материала
-    var postReposts: Reposts= Reposts(),//Информация о репостах записи («Рассказать друзьям»), объект с полями:
+    var postCopyright: CopyrightPost=CopyrightPost(),//Источник материала
+    var postReposts: RepostsPost= RepostsPost(),//Информация о репостах записи («Рассказать друзьям»), объект с полями:
     var views: Array<Int> = arrayOf(0),
     //val postSource: CodeSource,//Поле возвращается только для Standalone-приложений с ключом доступа, полученным в Implicit Flow.
     val copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
-    val postDonut: Donut=Donut(),
-    val attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
+    var attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
 )
 
  {
@@ -74,6 +76,7 @@ data class Post(
 object WallService{
     var posts = emptyArray<Post>()
     var lastId = 0
+    var comments = emptyArray<Comments>()
     //val ErrorLimit=-1
     fun clear(){
         posts = emptyArray()
@@ -83,7 +86,7 @@ object WallService{
         if (lastId>2147483646){
             println("Переполнение счётчика постов")
         } else {
-            posts += post.copy(id= ++lastId, postComments = post.postComments.copy(), postLikes = post.postLikes.copy())
+            posts += post.copy()//(id= ++lastId, postComments += post.postComments.copy(count=1,), postLikes = post.postLikes.copy())
         }
         return  posts.last()
     }
@@ -98,7 +101,7 @@ object WallService{
     fun update(newPost:Post): Boolean {
         for ((index, post) in posts.withIndex()){
             if (post.id==newPost.id){
-                posts[index]=post.copy(postComments = newPost.postComments.copy())
+                //posts[index]=post.copy(postComments = newPost.postComments.copy())
                 return true
             }
         }
@@ -109,14 +112,35 @@ object WallService{
             print(post)
         }
     }
+    fun createComment(postId: Int, comment: Comments): Comments {
+        try {
+            for ((index, post) in posts.withIndex()) {
+                if (post.id == postId) {
+
+                    comments[++lastId]=comment
+                }
+            }
+        }catch (e: RuntimeException ){
+            println("PostNotFoundException")
+        }
+        return comments[lastId]
+    }
+
 }
-data class Comments (
+class PostNotFoundException(message: String): RuntimeException(message)
+data class CommentsPost (
     var count: Int=0,//количество комментариев
     var canPost: Boolean=false,//информация о том, может ли текущий пользователь комментировать запись
     var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
-    var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
-    var newComment: String ="New comment"
+    var canOpen: Boolean=false//может ли текущий пользователь открыть комментарии к записи
+    //var Comment: Array <String> = arrayOf()
+)
+data class Comments (
+    var id: Int = 0,//Идентификатор комментария
+    var fromId: Int = 0,//Идентификатор автора комментария.
+    var date: Int = 1254,//Дата создания комментария в формате Unixtime
+    var text: String = "No comments"//Текст комментария
 )
 data class Likes(
     var count: Int=0,//число пользователей, которым понравилась запись
@@ -124,20 +148,20 @@ data class Likes(
     var canLikes: Boolean=false,//информация о том, может ли текущий пользователь поставить отметку «Мне нравится» ;
     var canPublish: Boolean=false//информация о том, может ли текущий пользователь сделать репост записи .
 )
-data class Copyright(
+data class CopyrightPost(
     var id: Int=0,
     var link: String="Link",
     var name: String="Name",
     var type: String="Type"
 )
-data class Donut(
+data class DonutPost(
     var isDonut: Boolean=false,//запись доступна только платным подписчика
     var paidDuration: Int=0,//время, в течение которого запись будет доступна только платным подписчикам VK Donut;
     //var placeholder: Objects,// заглушка для пользователей, которые не оформили подписку VK Donut. Отображается вместо содержимого записи.
     var canPublishFreeCopy: Boolean=false,//можно ли открыть запись для всех пользователей, а не только подписчиков VK Donut;
     var editMode: String= "No typing"//информация о том, какие значения VK Donut можно изменить в записи.
 )
-data class Reposts(//Информация о репостах записи («Рассказать друзьям»), объект с полями:
+data class RepostsPost(//Информация о репостах записи («Рассказать друзьям»), объект с полями:
     var count: Int=0,//число пользователей, скопировавших запись;
     var userReposted: Int=0//наличие репоста от текущего пользователя
 )
