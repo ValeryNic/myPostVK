@@ -1,5 +1,6 @@
 import java.awt.Image
 import java.lang.RuntimeException
+import java.nio.charset.CoderResult
 import java.security.CodeSource
 import java.util.Objects
 import javax.xml.stream.events.Comment
@@ -16,10 +17,10 @@ fun main (){
     WallService.add(post)
     WallService.add(post)
     WallService.likedById(post.id)
-    WallService.update(post)
+    WallService.update(1, post)
     post.id=1
     //post.postComments.Comment[post.postComments.count]="Good update"
-    WallService.update(post)
+    WallService.update(1, post)
     //WallService.update(Post(1, fromId = 1, date=1254, text = "New update"))
     WallService.print()
     println(VideoAttachment(Video(1)))
@@ -71,25 +72,98 @@ data class Post(
     //    result=31*result+attachments.contentHashCode()
     //}
 }
+data class Note(
+    //val errorCoder: Int = 180,
+    val noteId: Int,
+    val title: String,//Заголовок заметки.
+    val privacy: Int,//Уровень доступа к заметке
+    val message: String,//Текст комментария.
+    val text: String,
+    var comments: Array <Comment> = arrayOf(0)
+)
+data class  Comment(
+    var id: Int = 0,//Идентификатор комментария
+    var fromId: Int = 0,//Идентификатор автора комментария.
+    var date: Int = 1254,//Дата создания комментария в формате Unixtime
+    var text: String = "No comments",//Текст комментария
+    var privacyComment: Int =0
+)
 
+abstract class CrudService<T>{
+    private val elems= mutableListOf<T>()
+    private val id: Int=0
 
-object WallService{
-    var posts = emptyArray<Post>()
-    var lastId = 0
-    var comments = emptyArray<Comments>()
-    //val ErrorLimit=-1
-    fun clear(){
-        posts = emptyArray()
-        lastId = 0
+    abstract fun copyItem(item: T): T
+    fun add(elem: T): T{//(title: String, val text: String,val privacy: Int){//Создает новую заметку у текущего пользо
+        elems += copyItem(elem)
+        return  elems.last()
     }
-    fun add (post: Post): Post {
-        if (lastId>2147483646){
-            println("Переполнение счётчика постов")
+    fun update(itemId: Int, elem: T): Boolean{
+        if (elems.contains(elems[itemId])){
+            elems[itemId] = elem
+            return  true
         } else {
-            posts += post.copy()//(id= ++lastId, postComments += post.postComments.copy(count=1,), postLikes = post.postLikes.copy())
+        return false
         }
-        return  posts.last()
     }
+
+    fun delete(itemId: Int): Boolean{
+        if (elems.contains(elems[itemId])){
+            elems.removeAt(itemId)
+            return  true
+        } else {
+            return false
+        }
+    }
+    fun get(itemId: Int): Boolean {
+        if (elems.contains(elems[itemId])){
+            return  true
+        } else {
+            return false
+        }
+    }
+
+    fun getComment(val noteId: String, val sort: Int, val offset: Int, val count: Int){
+
+    }
+    fun getFriendsNotes(val offset: Int, val count: Int){
+
+    }
+    fun restoreComment(val commentId: Int){
+
+    }
+}
+object NoteService: CrudService<Note>(){
+    var notes = mutableListOf<Note>()//emptyArray<Note>()
+    //var lastId = 0
+    override fun copyItem(item: Note): Note = item.copy()
+    fun createComment(noteId: Int, message: String){
+        if (get(noteId)){
+            val id=notes[noteId].comments.size
+            notes[noteId].comments[id].text = message
+        }
+    }
+
+
+
+}
+object CommentsService: CrudService<Comment>(){
+    override fun copyItem(item: Comment): Comment =item.copy()
+
+}
+
+object WallService: CrudService<Post>(){
+    var posts = mutableListOf<Post>()
+    var lastId = 0
+    override fun copyItem(item: Post): Post =item.copy()
+
+
+
+    //fun clear(){
+    //    posts = emptyArray()
+    //    lastId = 0
+    //}
+
     fun likedById(id: Int){
         for ((index, post) in posts.withIndex()){
             if (post.id==id && post.postLikes.canLikes==true && post.postLikes.userLikes==true && post.postLikes.canPublish==true ){
@@ -98,15 +172,15 @@ object WallService{
             }
         }
     }
-    fun update(newPost:Post): Boolean {
-        for ((index, post) in posts.withIndex()){
-            if (post.id==newPost.id){
+    //fun update(newPost:Post): Boolean {
+    //    for ((index, post) in posts.withIndex()){
+    //        if (post.id==newPost.id){
                 //posts[index]=post.copy(postComments = newPost.postComments.copy())
-                return true
-            }
-        }
-        return false
-    }
+    //            return true
+    //        }
+    //    }
+    //    return false
+    //}
     fun print(){
         for (post in posts) {
             print(post)
@@ -136,12 +210,9 @@ data class CommentsPost (
     var canOpen: Boolean=false//может ли текущий пользователь открыть комментарии к записи
     //var Comment: Array <String> = arrayOf()
 )
-data class Comments (
-    var id: Int = 0,//Идентификатор комментария
-    var fromId: Int = 0,//Идентификатор автора комментария.
-    var date: Int = 1254,//Дата создания комментария в формате Unixtime
-    var text: String = "No comments"//Текст комментария
-)
+//data class Comments (
+//    override fun copyItem(item: Comment): Comment = item.copy()
+//)
 data class Likes(
     var count: Int=0,//число пользователей, которым понравилась запись
     var userLikes: Boolean=false,//наличие отметки «Мне нравится» от текущего пользователя;
