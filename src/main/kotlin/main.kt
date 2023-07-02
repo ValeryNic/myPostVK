@@ -18,8 +18,11 @@ fun main (){
     WallService.likedById(post.id)
     WallService.update(post)
     post.id=1
-    //post.postComments.Comment[post.postComments.count]="Good update"
+    post.postComments.Comments[post.postComments.count] = "I like this post"
+    val lastComment = WallService.createComment(post.postComments.count,post.postComments.Comments[1]) ?: throw PostNotFoundException("no commentArray on this post")
     WallService.update(post)
+
+
     //WallService.update(Post(1, fromId = 1, date=1254, text = "New update"))
     WallService.print()
     println(VideoAttachment(Video(1)))
@@ -76,8 +79,7 @@ data class Post(
 object WallService{
     var posts = emptyArray<Post>()
     var lastId = 0
-    var comments = emptyArray<Comments>()
-    //val ErrorLimit=-1
+    //var comments = emptyArray<Comments>()
     fun clear(){
         posts = emptyArray()
         lastId = 0
@@ -92,7 +94,7 @@ object WallService{
     }
     fun likedById(id: Int){
         for ((index, post) in posts.withIndex()){
-            if (post.id==id && post.postLikes.canLikes==true && post.postLikes.userLikes==true && post.postLikes.canPublish==true ){
+            if (post.id==id && post.postLikes.canLikes==true && post.postLikes.userLikes==true && post.postLikes.canPublish==true) {
                 post.postLikes.count = post.postLikes.count++
                 posts[index]=post.copy(postLikes = post.postLikes.copy())
             }
@@ -112,18 +114,21 @@ object WallService{
             print(post)
         }
     }
-    fun createComment(postId: Int, comment: Comments): Comments {
+    fun createComment(postId: Int, comment: String): String {
         try {
             for ((index, post) in posts.withIndex()) {
                 if (post.id == postId) {
 
-                    comments[++lastId]=comment
+                    post.postComments.Comments[++lastId]=comment
                 }
             }
+
+
         }catch (e: RuntimeException ){
-            println("PostNotFoundException")
+            println("no commentArray on this post")
         }
-        return comments[lastId]
+        val post = posts.last()
+        return post.postComments.Comments[lastId]
     }
 
 }
@@ -133,10 +138,10 @@ data class CommentsPost (
     var canPost: Boolean=false,//информация о том, может ли текущий пользователь комментировать запись
     var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
-    var canOpen: Boolean=false//может ли текущий пользователь открыть комментарии к записи
-    //var Comment: Array <String> = arrayOf()
+    var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
+    var Comments: Array <String> = arrayOf()
 )
-data class Comments (
+data class Comment (
     var id: Int = 0,//Идентификатор комментария
     var fromId: Int = 0,//Идентификатор автора комментария.
     var date: Int = 1254,//Дата создания комментария в формате Unixtime
