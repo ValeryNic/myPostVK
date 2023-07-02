@@ -18,6 +18,8 @@ fun main (){
     WallService.add(post)
     WallService.likedById(post.id)
     WallService.update(1, post)
+    val comment:CommentsPost=CommentsPost(1 )
+    WallService.createComment(3,comment) ?: throw PostNotFoundException("No post with $id")
     post.id=1
     //post.postComments.Comment[post.postComments.count]="Good update"
     WallService.update(1, post)
@@ -90,7 +92,7 @@ data class  Comment(
 )
 
 abstract class CrudService<T>{
-    private val elems= mutableListOf<T>()
+    private val elems= mutableMapOf<>()
     private val id: Int=0
 
     abstract fun copyItem(item: T): T
@@ -159,10 +161,10 @@ object WallService: CrudService<Post>(){
 
 
 
-    //fun clear(){
-    //    posts = emptyArray()
-    //    lastId = 0
-    //}
+    fun clear(){
+        posts = emptyArray()
+        lastId = 0
+    }
 
     fun likedById(id: Int){
         for ((index, post) in posts.withIndex()){
