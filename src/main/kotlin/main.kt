@@ -19,7 +19,7 @@ fun main (){
     WallService.update(post)
     post.id=1
     post.postComments.Comments[post.postComments.count] = "I like this post"
-    val lastComment = WallService.createComment(post.postComments.count,post.postComments.Comments[1]) ?: throw PostNotFoundException("no commentArray on this post")
+    val lastComment = WallService.createComment(1, post.postComments.Comments.last()) ?: throw PostNotFoundException("no commentArray on this post")
     WallService.update(post)
 
 
@@ -27,6 +27,7 @@ fun main (){
     WallService.print()
     println(VideoAttachment(Video(1)))
 }
+
 data class Post(
     var id: Int=0,//Идентификатор записи.
     val ownerId: Int=0,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
@@ -55,25 +56,26 @@ data class Post(
     //val postSource: CodeSource,//Поле возвращается только для Standalone-приложений с ключом доступа, полученным в Implicit Flow.
     val copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
     var attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
+
 )
 
- {
-    override fun equals(other: Any?): Boolean {
-        if(this===other) return true
+ //{
+    //override fun equals(other: Any?): Boolean {
+     //   if(this===other) return true
         //if (javaClass!=other?.javaClass) return false
 
-        other as Post
+      //  other as Post
 
-        if (id != other.id) return false
-        if (Likes()!= other.postLikes) return false
-        return  attechments.contentEquals(other.attechments)
-    }
+    //    if (id != other.id) return false
+    //    if (Likes()!= other.postLikes) return false
+    //    return  attechments.contentEquals(other.attechments)
+    //}
     //override fun hashCode():Int {
     //    var result = id
     //    result= 31*result+Likes().hashCode()
     //    result=31*result+attachments.contentHashCode()
     //}
-}
+//}
 
 
 object WallService{
@@ -122,6 +124,7 @@ object WallService{
                     post.postComments.Comments[++lastId]=comment
                 }
             }
+
 
 
         }catch (e: RuntimeException ){

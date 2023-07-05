@@ -64,12 +64,13 @@ class WallServiceTest {
     }
     @Test(expected = PostNotFoundException::class)
     fun shouldThrow() {
-        WallService.createComment(4, comment = WallService.comments[4])
+        val comment: String = "My next comment"
+        WallService.createComment(4, comment)
     }
     @Test
     fun createComment1() {
-        val comment: Comments = Comments()
-        val comment1: Comments = WallService.createComment(0,comment)
+        val comment: String = "My new comment"
+        val comment1: String = WallService.createComment(0,comment)
         assertEquals(comment, comment1)
     }
 }
