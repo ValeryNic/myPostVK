@@ -18,14 +18,21 @@ fun main (){
     WallService.add(post)
     WallService.likedById(post.id)
     WallService.update(1, post)
-    val comment:CommentsPost=CommentsPost(1 )
-    WallService.createComment(3,comment) ?: throw PostNotFoundException("No post with $id")
+    //val comment:CommentsPost=CommentsPost(1,false, false,false,false,post.postComments.comments[])
+    //WallService.createCommentPost(3,comment) ?: throw PostNotFoundException("No post with 3")
     post.id=1
     //post.postComments.Comment[post.postComments.count]="Good update"
     WallService.update(1, post)
     //WallService.update(Post(1, fromId = 1, date=1254, text = "New update"))
     WallService.print()
     println(VideoAttachment(Video(1)))
+    var note = Note(0, "About Netology",0,"","Netology is a good site", comments = arrayOf())
+    var note1 = NoteService.add(note)
+    note.noteId  = 1
+    note.title = "My work"
+    var note2=NoteService.add(note)
+    val index=NoteService.createComment(1,"Кто бы сомневался")
+
 }
 data class Post(
     var id: Int=0,//Идентификатор записи.
@@ -53,7 +60,7 @@ data class Post(
     var postReposts: RepostsPost= RepostsPost(),//Информация о репостах записи («Рассказать друзьям»), объект с полями:
     var views: Array<Int> = arrayOf(0),
     //val postSource: CodeSource,//Поле возвращается только для Standalone-приложений с ключом доступа, полученным в Implicit Flow.
-    val copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
+    var copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
     var attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
 )
 
@@ -75,29 +82,30 @@ data class Post(
     //}
 }
 data class Note(
-    //val errorCoder: Int = 180,
-    val noteId: Int,
-    val title: String,//Заголовок заметки.
-    val privacy: Int,//Уровень доступа к заметке
-    val message: String,//Текст комментария.
-    val text: String,
-    var comments: Array <Comment> = arrayOf(0)
+    var noteId: Int,
+    var title: String,//Заголовок заметки.
+    var privacy: Int,//Уровень доступа к заметке
+    var commentPrivacy: Int,//Уровень доступа к комментированию заметки.
+    var message: String,//Текст комментария.
+    var text: String,
+    var commentsId: Int//количество комментариев
 )
-data class  Comment(
-    var id: Int = 0,//Идентификатор комментария
-    var fromId: Int = 0,//Идентификатор автора комментария.
-    var date: Int = 1254,//Дата создания комментария в формате Unixtime
-    var text: String = "No comments",//Текст комментария
-    var privacyComment: Int =0
+data class CommentOne(
+    var id: Int,//Идентификатор комментария
+    var fromId: Int,//Идентификатор автора комментария.
+    var date: Int,//Дата создания комментария в формате Unixtime
+    var text: String,//Текст комментария
+    var privacyComment: Int,
+    var deleteComment: Boolean
 )
 
 abstract class CrudService<T>{
-    private val elems= mutableMapOf<>()
-    private val id: Int=0
+    private var elems = mutableMapOf<T>()
+    private var id: Int=0
 
-    abstract fun copyItem(item: T): T
+    abstract fun copyItem(elem: T): T
     fun add(elem: T): T{//(title: String, val text: String,val privacy: Int){//Создает новую заметку у текущего пользо
-        elems += copyItem(elem)
+        elems.add(copyItem(elem))
         return  elems.last()
     }
     fun update(itemId: Int, elem: T): Boolean{
@@ -108,6 +116,7 @@ abstract class CrudService<T>{
         return false
         }
     }
+
 
     fun delete(itemId: Int): Boolean{
         if (elems.contains(elems[itemId])){
@@ -124,33 +133,45 @@ abstract class CrudService<T>{
             return false
         }
     }
-
-    fun getComment(val noteId: String, val sort: Int, val offset: Int, val count: Int){
-
-    }
-    fun getFriendsNotes(val offset: Int, val count: Int){
-
-    }
-    fun restoreComment(val commentId: Int){
-
-    }
 }
 object NoteService: CrudService<Note>(){
     var notes = mutableListOf<Note>()//emptyArray<Note>()
+    var comments = mutableListOf<CommentOne>()
     //var lastId = 0
     override fun copyItem(item: Note): Note = item.copy()
-    fun createComment(noteId: Int, message: String){
-        if (get(noteId)){
-            val id=notes[noteId].comments.size
-            notes[noteId].comments[id].text = message
+    fun createComment(noteId: Int, message: String): Int{
+        var comment: CommentOne = comments.get(notes.get(noteId).commentsId)
+        comment.text = message
+        comment.id=notes.get(noteId).commentsId++
+        comments.add(comment)
+       return comment.id
+    }
+    fun deleteComment(commentId: Int): Boolean{
+        if (comments.contains(comments[commentId])){
+            comments[commentId].deleteComment = true
+            return  true
+        } else {
+            comments[commentId].deleteComment = false
+            return false
+        }
+    }
+    fun edit(noteId: Int, note: Note): Boolean {
+        if (notes.contains(notes[noteId])){
+            notes[noteId] = note
+            return  true
+        } else {
+            return false
+        }
+    }
+    fun editComment(commentId: Int, comment: CommentOne): Boolean {
+        if (comments.contains(comments[commentId])){
+            comments[commentId] = comment
+            return  true
+        } else {
+            return false
         }
     }
 
-
-
-}
-object CommentsService: CrudService<Comment>(){
-    override fun copyItem(item: Comment): Comment =item.copy()
 
 }
 
@@ -161,10 +182,10 @@ object WallService: CrudService<Post>(){
 
 
 
-    fun clear(){
-        posts = emptyArray()
-        lastId = 0
-    }
+    //fun clear(){
+     //   posts = emptyArray()
+     //   lastId = 0
+    //}
 
     fun likedById(id: Int){
         for ((index, post) in posts.withIndex()){
@@ -188,18 +209,18 @@ object WallService: CrudService<Post>(){
             print(post)
         }
     }
-    fun createComment(postId: Int, comment: Comments): Comments {
+    fun createCommentPost(postId: Int, comment: String): String {
         try {
             for ((index, post) in posts.withIndex()) {
                 if (post.id == postId) {
-
-                    comments[++lastId]=comment
+                    post.postComments.comments[++lastId]=comment
+                    posts[postId] = post
                 }
             }
         }catch (e: RuntimeException ){
             println("PostNotFoundException")
         }
-        return comments[lastId]
+        return posts[postId].postComments.comments[lastId]
     }
 
 }
@@ -210,7 +231,7 @@ data class CommentsPost (
     var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
     var canOpen: Boolean=false//может ли текущий пользователь открыть комментарии к записи
-    //var Comment: Array <String> = arrayOf()
+    var comments: Array <String> = arrayOf()
 )
 //data class Comments (
 //    override fun copyItem(item: Comment): Comment = item.copy()
