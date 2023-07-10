@@ -1,141 +1,222 @@
+import com.sun.tools.javac.util.JCDiagnostic
 import java.awt.Image
 import java.lang.RuntimeException
+import java.nio.charset.CoderResult
 import java.security.CodeSource
 import java.util.Objects
 import javax.xml.stream.events.Comment
-import kotlin.random.Random
+fun main () {
 
-fun main (){
     var post = Post(0,0,0,0,1254,"",0,
         0,false,"post",0,false,false,
         false, false, false,false, 0,
         postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
         postReposts = RepostsPost(), views = arrayOf(),
-         copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
+        copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
     )
     WallService.add(post)
-    WallService.add(post)
+    var post1=WallService.copyItem(post)
+    post1.ownerId=1
+    WallService.add(post1)
     WallService.likedById(post.id)
-    WallService.update(post)
-    post.id=1
-    post.postComments.Comments[post.postComments.count] = "I like this post"
-    val lastComment = WallService.createComment(1, post.postComments.Comments.last()) ?: throw PostNotFoundException("no commentArray on this post")
-    WallService.update(post)
-
-
-    //WallService.update(Post(1, fromId = 1, date=1254, text = "New update"))
+    WallService.update(1, post)
+    post.id = 1
+    WallService.update(1, post)
+    WallService.update(2, post)
     WallService.print()
     println(VideoAttachment(Video(1)))
+    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site", commentsNote = arrayOf())
+    var noteId = NoteService.add(0,"my Note", "I live Net",0,0)
+    noteId = NoteService.add(1,"my Note1", "I live Net",0,0)
 }
-
 data class Post(
     var id: Int=0,//Идентификатор записи.
-    val ownerId: Int=0,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
-    val fromId: Int?,//Идентификатор автора записи (от чьего имени опубликована запись).
-    val createdBy: Int=0,//Идентификатор администратора, который опубликовал запись (возвращается только для сообществ при запросе с ключом доступа администратора). Возвращается в записях, опубликованных менее 24 часов назад.
-    val date: Int?,//Время публикации записи в формате unixtime.
-    val text: String?,//Текст записи.
-    val replyOwnerId: Int=0,//Идентификатор владельца записи, в ответ на которую была оставлена текущая.
-    val replyPostId:Int=0,//Идентификатор записи, в ответ на которую была оставлена текущая.
-    val friendsOunly: Boolean=false,//true, если запись была создана с опцией «Только для друзей».
-    val postType: String="post",//Тип записи, может принимать следующие значения: post, copy, reply, postpone, suggest.
-    val signerId: Int=0,//Идентификатор автора, если запись была опубликована от имени сообщества и подписана пользователем;
-    val canPin: Boolean=false,//Информация о том, может ли текущий пользователь закрепить запись .
-    val canDelete: Boolean=false,//Информация о том, может ли текущий пользователь удалить запись
-    val canEdit: Boolean=false,//Информация о том, может ли текущий пользователь редактировать запись.
-    val isPinner: Boolean=false,//Информация о том, что запись закреплена
-    val markerAsAds: Boolean=false,//Информация о том, содержит ли запись отметку «реклама»
-    val isFavorite: Boolean=false,//true, если объект добавлен в закладки у текущего пользователя.
-    val postPonedId: Int=0,//Идентификатор отложенной записи. Это поле возвращается тогда, когда запись стояла на таймере.
-    val postDonut: DonutPost=DonutPost(),
+    var ownerId: Int=0,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
+    var fromId: Int?,//Идентификатор автора записи (от чьего имени опубликована запись).
+    var createdBy: Int=0,//Идентификатор администратора, который опубликовал запись (возвращается только для сообществ при запросе с ключом доступа администратора). Возвращается в записях, опубликованных менее 24 часов назад.
+    var date: Int?,//Время публикации записи в формате unixtime.
+    var text: String?,//Текст записи.
+    var replyOwnerId: Int=0,//Идентификатор владельца записи, в ответ на которую была оставлена текущая.
+    var replyPostId:Int=0,//Идентификатор записи, в ответ на которую была оставлена текущая.
+    var friendsOunly: Boolean=false,//true, если запись была создана с опцией «Только для друзей».
+    var postType: String="post",//Тип записи, может принимать следующие значения: post, copy, reply, postpone, suggest.
+    var signerId: Int=0,//Идентификатор автора, если запись была опубликована от имени сообщества и подписана пользователем;
+    var canPin: Boolean=false,//Информация о том, может ли текущий пользователь закрепить запись .
+    var canDelete: Boolean=false,//Информация о том, может ли текущий пользователь удалить запись
+    var canEdit: Boolean=false,//Информация о том, может ли текущий пользователь редактировать запись.
+    var isPinner: Boolean=false,//Информация о том, что запись закреплена
+    var markerAsAds: Boolean=false,//Информация о том, содержит ли запись отметку «реклама»
+    var isFavorite: Boolean=false,//true, если объект добавлен в закладки у текущего пользователя.
+    var postPonedId: Int=0,//Идентификатор отложенной записи. Это поле возвращается тогда, когда запись стояла на таймере.
+    var postDonut: DonutPost=DonutPost(),
     var postComments: CommentsPost = CommentsPost(),//Информация о комментариях к записи, объект с полями
     var postLikes: Likes=Likes(),//Информация о лайках к записи
-    var postCopyright: CopyrightPost=CopyrightPost(),//Источник материала
+    var postCopyright: CopyrightPost = CopyrightPost(),
     var postReposts: RepostsPost= RepostsPost(),//Информация о репостах записи («Рассказать друзьям»), объект с полями:
     var views: Array<Int> = arrayOf(0),
-    //val postSource: CodeSource,//Поле возвращается только для Standalone-приложений с ключом доступа, полученным в Implicit Flow.
-    val copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
+    var copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
     var attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
-
 )
 
- //{
-    //override fun equals(other: Any?): Boolean {
-     //   if(this===other) return true
-        //if (javaClass!=other?.javaClass) return false
+data class Note(
+    var noteId: Int=0,
+    var ownerId: Int=0,
+    var title: String= "Нет заголовка",//Заголовок заметки.
+    var privacy: Int,//Уровень доступа к заметке
+    var commentPrivacy: Int=0,//Уровень доступа к комментированию заметки
+    var message: String= "Нет комментария",//Текст комментария.
+    var text: String="Нет заметки",
+    var commentsNote:Array<Int> = arrayOf()
+)
+data class  CommentOne(
+    var id: Int=0,//Идентификатор комментария
+    var fromId: Int=0,//Идентификатор автора комментария.
+    var date: Int=1524,//Дата создания комментария в формате Unixtime
+    var text: String="Нет комментария",//Текст комментария
+    var privacyComment: Int=0,
+    var deleteComment: Boolean=true
+)
 
-      //  other as Post
-
-    //    if (id != other.id) return false
-    //    if (Likes()!= other.postLikes) return false
-    //    return  attechments.contentEquals(other.attechments)
-    //}
-    //override fun hashCode():Int {
-    //    var result = id
-    //    result= 31*result+Likes().hashCode()
-    //    result=31*result+attachments.contentHashCode()
-    //}
-//}
-
-
-object WallService{
-    var posts = emptyArray<Post>()
-    var lastId = 0
-    //var comments = emptyArray<Comments>()
-    fun clear(){
-        posts = emptyArray()
-        lastId = 0
+abstract class CrudService<T>{
+    private val elems = mutableListOf<T>()
+    private val id: Int=0
+    abstract fun copyItem(item: T): T
+    fun add(elem: T): T{
+        elems.add(copyItem(elem))
+        return elems.last()
     }
-    fun add (post: Post): Post {
-        if (lastId>2147483646){
-            println("Переполнение счётчика постов")
+    fun update(itemId: Int, elem: T): Boolean{
+        if (elems.contains(elems[itemId])){
+            elems[itemId] = elem
+            return true
+        } else{return false}
+    }
+    fun delete(itemId: Int): Boolean{
+        if (elems.contains(elems[itemId])){
+            elems.removeAt(itemId)
+            return true
+        } else {return false}
+    }
+}
+object NoteService: CrudService<Note>() {
+    var notes = mutableListOf<Note>()
+    var comments = mutableListOf<CommentOne>()
+    fun add(ownerId: Int, title: String, text: String, privacy: Int, commentPrivacy: Int): Int {
+        var note = Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария",text, commentsNote = emptyArray())
+        notes.add(note)
+        return note.noteId
+    }
+    fun createComment(noteId: Int, fromId: Int, date: Int, message: String,privacyComment: Int): Int {
+        if (notes.contains(notes[noteId])) {
+            comments.add(CommentOne(comments.lastIndex, fromId, date, message, privacyComment,false))
+            notes[noteId].commentsNote += comments.lastIndex
+            return comments.lastIndex
+        } else {return  -1}
+    }
+    fun deleteNote(noteId: Int): Boolean {
+        if (notes.contains(notes[noteId])) {
+            for ((index, comment) in notes[noteId].commentsNote.withIndex())  {
+                val result= comments.removeAt(notes[noteId].commentsNote[index])
+            }
+        }
+        return delete(noteId)
+    }
+    fun deleteComment(commentId: Int): Boolean {
+        if (comments.contains(comments[commentId])) {
+            comments[commentId].deleteComment = true
+            return true
         } else {
-            posts += post.copy()//(id= ++lastId, postComments += post.postComments.copy(count=1,), postLikes = post.postLikes.copy())
+            comments[commentId].deleteComment = false
+            return false
         }
-        return  posts.last()
     }
-    fun likedById(id: Int){
-        for ((index, post) in posts.withIndex()){
-            if (post.id==id && post.postLikes.canLikes==true && post.postLikes.userLikes==true && post.postLikes.canPublish==true) {
+
+    fun edit(noteId: Int, note: Note): Boolean { //Редактирует заметку текущего пользователя.
+        return NoteService.update(noteId, note)
+    }
+
+    fun editComment(commentId: Int, comment: CommentOne): Boolean {//Редактирует указанный комментарий у заметки.
+        if (comments.contains(comments[commentId])) {
+            comment.deleteComment=false
+            comments[commentId] = comment
+            return true
+        } else {
+            return false
+        }
+    }
+
+    fun get(ownerId: Int): MutableList<Note> ? {
+        var notesOwnerId = mutableListOf<Note>()
+        for ((index, note) in notes.withIndex()) {
+            if (note.ownerId == ownerId) {
+                notesOwnerId.add(note)
+            }
+        }
+        return notesOwnerId
+    }
+
+    fun getById(noteId: Int): Note ? = notes[noteId]
+    fun getComments(noteId:Int): Array<CommentOne> ? {
+        var commentArray= emptyArray<CommentOne>()
+        if (notes.contains(notes[noteId])) {
+            for ((index, comment) in notes[noteId].commentsNote.withIndex())  {
+                commentArray += comments[notes[noteId].commentsNote[index]]
+            }
+        }
+        return commentArray
+    }
+    fun restoreComment(commentId: Int): Boolean {
+        if ( comments.contains(comments[commentId])){
+            comments[commentId].deleteComment=false
+            return true
+        } else{return false}
+    }
+
+    override fun copyItem(item: Note): Note = item.copy()
+}
+object WallService: CrudService<Post>() {
+    var posts = mutableListOf<Post>()
+    var comments = mutableListOf<CommentOne>()
+    override fun copyItem(item: Post): Post = item.copy()
+    fun clear() {
+        posts.clear()
+    }
+
+
+
+    fun likedById(id: Int) {
+        for ((index, post) in posts.withIndex()) {
+            if (post.id == id && post.postLikes.canLikes == true && post.postLikes.userLikes == true && post.postLikes.canPublish == true) {
                 post.postLikes.count = post.postLikes.count++
-                posts[index]=post.copy(postLikes = post.postLikes.copy())
+                posts[index] = post.copy(postLikes = post.postLikes.copy())
             }
         }
-    }
-    fun update(newPost:Post): Boolean {
-        for ((index, post) in posts.withIndex()){
-            if (post.id==newPost.id){
-                //posts[index]=post.copy(postComments = newPost.postComments.copy())
-                return true
-            }
-        }
-        return false
     }
     fun print(){
         for (post in posts) {
             print(post)
         }
     }
-    fun createComment(postId: Int, comment: String): String {
+    fun createComment(postId: Int, postComments: CommentsPost ): CommentsPost {
         try {
-            for ((index, post) in posts.withIndex()) {
-                if (post.id == postId) {
-
-                    post.postComments.Comments[++lastId]=comment
-                }
+            if (posts.contains(posts[postId])) {
+                posts[postId].postComments = postComments
             }
 
 
-
-        }catch (e: RuntimeException ){
+        } catch (e: RuntimeException) {
             println("no commentArray on this post")
         }
-        val post = posts.last()
-        return post.postComments.Comments[lastId]
+        return posts[postId].postComments
     }
-
 }
 class PostNotFoundException(message: String): RuntimeException(message)
+data class Likes(
+    var count: Int=0,//число пользователей, которым понравилась запись
+    var userLikes: Boolean=false,//наличие отметки «Мне нравится» от текущего пользователя;
+    var canLikes: Boolean=false,//информация о том, может ли текущий пользователь поставить отметку «Мне нравится» ;
+    var canPublish: Boolean=false//информация о том, может ли текущий пользователь сделать репост записи .
+)
 data class CommentsPost (
     var count: Int=0,//количество комментариев
     var canPost: Boolean=false,//информация о том, может ли текущий пользователь комментировать запись
@@ -143,18 +224,6 @@ data class CommentsPost (
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
     var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
     var Comments: Array <String> = arrayOf()
-)
-data class Comment (
-    var id: Int = 0,//Идентификатор комментария
-    var fromId: Int = 0,//Идентификатор автора комментария.
-    var date: Int = 1254,//Дата создания комментария в формате Unixtime
-    var text: String = "No comments"//Текст комментария
-)
-data class Likes(
-    var count: Int=0,//число пользователей, которым понравилась запись
-    var userLikes: Boolean=false,//наличие отметки «Мне нравится» от текущего пользователя;
-    var canLikes: Boolean=false,//информация о том, может ли текущий пользователь поставить отметку «Мне нравится» ;
-    var canPublish: Boolean=false//информация о том, может ли текущий пользователь сделать репост записи .
 )
 data class CopyrightPost(
     var id: Int=0,
@@ -173,10 +242,6 @@ data class RepostsPost(//Информация о репостах записи (
     var count: Int=0,//число пользователей, скопировавших запись;
     var userReposted: Int=0//наличие репоста от текущего пользователя
 )
-
-//interface  Attechment {
-//    val tupe: String
-//}
 abstract  class Attechment {
     abstract val type: String
 }
@@ -186,12 +251,9 @@ data class Video(
     var title: String= "My story",//Название видеозаписи
     var description: String= "Video about my life",//Текст описания видеозаписи
     var duration: Int=2048//Длительность ролика в секундах
-
 )
-//data class  VideoAttachment(override  val type: String="video", val video:Video ): Attechment
 data class VideoAttachment(val video: Video): Attechment() {
     override val type: String = "video"
-
     //get() = TODO("Not yet implemented")
     override fun toString(): String {
         return "$type with $video"//super.toString()
@@ -205,8 +267,8 @@ data class Audio(
     var duration: Int = 390,
     var date: Int = 1254
 )
-data class AudioAttachment(val audio: Audio): Attechment(){
-    override  val type: String = "Audio"
+data class AudioAttachment(val audio: Audio): Attechment() {
+    override val type: String = "Audio"
     override fun toString(): String {
         return "$type with $audio"
     }
