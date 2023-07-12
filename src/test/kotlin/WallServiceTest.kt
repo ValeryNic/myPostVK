@@ -59,17 +59,24 @@ class WallServiceTest {
     }
     @Test(expected = PostNotFoundException::class)
     fun shouldThrow() {
-        val comment: String = "My next comment"
-        val postComment: CommentsPost = CommentsPost(0,false,false,false,false, Comments = arrayOf())
-        postComment.Comments[0]=comment
-        WallService.createCommentPost(4, postComment)
+        val post = Post(0,0,0,0,1254,"",0,
+            0,false,"post",0,false,false,
+            false, false, false,false, 0,
+            postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
+            postReposts = RepostsPost(), views = arrayOf(),
+            copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
+        )
+        WallService.add(post)
+        //val comment: String = "My next comment"
+        val postComment: CommentsPost = CommentsPost(0,false,false,false,false, CommentsArray = arrayOf())
+        WallService.createCommentPost(2, postComment)
     }
     @Test
     fun createComment1() {
         val comment: String = "My comment for post"
-        val postComment: CommentsPost = CommentsPost(0,false,false,false,false, Comments = arrayOf())
-        postComment.Comments[0]=comment
+        val postComment: CommentsPost = CommentsPost(0,false,false,false,false, CommentsArray = arrayOf())
+        postComment.CommentsArray[0]=comment
         val postComment1 = WallService.createCommentPost(0,postComment)
-        assertEquals(comment, postComment1.Comments[0])
+        assertEquals(comment, postComment1.CommentsArray[0])
     }
 }

@@ -25,7 +25,7 @@ fun main () {
     WallService.update(2, post)
     WallService.print()
     println(VideoAttachment(Video(1)))
-    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site", commentsNote = arrayOf())
+    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site")
     var noteId = NoteService.add(0,"my Note", "I live Net",0,0)
     noteId = NoteService.add(1,"my Note1", "I live Net",0,0)
 }
@@ -65,14 +65,12 @@ data class Note(
     var privacy: Int,//Уровень доступа к заметке
     var commentPrivacy: Int=0,//Уровень доступа к комментированию заметки
     var message: String= "Нет комментария",//Текст комментария.
-    var text: String="Нет заметки",
-    var commentsNote:Array<Int> = arrayOf()
+    var text: String="Нет заметки"
 )
 data class  CommentOne(
     var id: Int=0,//Идентификатор комментария
     var fromId: Int=0,//Идентификатор автора комментария.
-    var noteId: Int =0,//идентификатор заметки
-    var ownerId: Int = 0,//идентификатор владельца заметки
+    var ownerId: Int=0,//идентификатор автора заметки
     var date: Int=1524,//Дата создания комментария в формате Unixtime
     var text: String="Нет комментария",//Текст комментария
     var privacyComment: Int=0,
@@ -100,61 +98,59 @@ abstract class CrudService<T>{
         } else {return false}
     }
 }
-
 object NoteService: CrudService<Note>() {
     var notes = mutableListOf<Note>()
     var comments = mutableListOf<CommentOne>()
     fun add(ownerId: Int, title: String, text: String, privacy: Int, commentPrivacy: Int): Int {
-        notes.add(Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария",text, commentsNote = emptyArray()))
-        return notes.lastIndex
+        var note = Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария",text)
+        notes.add(note)
+        return note.noteId
     }
-    fun createComment(noteId: Int, fromId: Int, date: Int, message: String,privacyComment: Int): Int {
-        for ((index, note) in notes.withIndex()) {
-            if (notes[index].ownerId == noteId) {
-                comments.add(CommentOne(comments.size, fromId, notes[index].noteId, notes[index].ownerId, date, message, privacyComment, false))
-                notes[index].commentsNote += comments.lastIndex
+    fun createComment(commentId: Int, fromId: Int, ownerId: Int, date: Int, message: String,privacyComment: Int): Int {
+        var result =-1
+        for ((index, comment) in comments.withIndex()) {
+            if (comments[index].id == commentId) {
+                comments.add(CommentOne(comments.size, fromId, ownerId, date, message, privacyComment, false))
+                result = comments.lastIndex
             }
         }
-        return comments.lastIndex
+        return  result
     }
     fun deleteNote(noteId: Int): Boolean {
+        var result = false
         for ((index, note) in notes.withIndex()) {
             if (notes[index].noteId == noteId) {
-                val note = notes[index]
-                for ((index) in note.commentsNote.withIndex()) {
-                    val result = comments.removeAt(note.commentsNote[index])
-                }
+                result = delete(index)
             }
         }
-        return delete(noteId)
+        return result
     }
     fun deleteComment(commentId: Int): Boolean {
-        var result: Boolean = false
-        for ((index, comment: CommentOne) in comments.withIndex()) {
+        var result = false
+        for ((index, comment) in comments.withIndex()) {
             if (comments[index].id == commentId) {
                 comments[index].deleteComment = true
                 result = true
             }
         }
-        return result
+        return  result
     }
 
     fun edit(noteId: Int, note: Note): Boolean { //Редактирует заметку текущего пользователя.
-        var result: Boolean = false
+        var result = false
         for ((index, note) in notes.withIndex()) {
             if (notes[index].noteId == noteId) {
-                result = NoteService.update(index, note)
+                result = NoteService.update(noteId, note)
             }
         }
         return result
     }
 
     fun editComment(commentId: Int, comment: CommentOne): Boolean {//Редактирует указанный комментарий у заметки.
-        var result: Boolean = false
+        var result=false
         for ((index, comment) in comments.withIndex()) {
             if (comments[index].id == commentId) {
-                comment.deleteComment = false
-                comments[commentId] = comment
+                comments[index] = comment
                 result = true
             }
         }
@@ -172,51 +168,59 @@ object NoteService: CrudService<Note>() {
     }
 
     fun getById(noteId: Int): Note {
-        var indexNote = notes.size
+        var result = notes[notes.size]
         for ((index, note) in notes.withIndex()) {
-            if(notes[index].noteId == noteId){
-                indexNote = index
+            if (notes[index].noteId == noteId) {
+                result = notes[index]
             }
         }
-        return notes[indexNote]
+        return result
     }
-    fun getComments(noteId:Int): Array<CommentOne>  {
+    fun getComments(noteId:Int): Array<CommentOne> ? {
         var commentArray= emptyArray<CommentOne>()
         for ((index, note) in notes.withIndex()) {
             if (notes[index].noteId == noteId) {
-                for ((index, comment) in notes[noteId].commentsNote.withIndex()) {
-                    commentArray += comments[notes[noteId].commentsNote[index]]
+                for ((indexComment, comment) in comments.withIndex()) {
+                    if (comments[indexComment].ownerId == notes[index].ownerId) {
+                        commentArray += comments[indexComment]
+                    }
                 }
             }
         }
         return commentArray
     }
-    fun restoreComment(commentId: Int): Boolean {
-        if ( comments.contains(comments[commentId])){
-            comments[commentId].deleteComment=false
-            return true
-        } else{return false}
+    fun restoreComment(commentId: Int): Int {
+        var result= -1
+        for ((index, comment) in comments.withIndex()) {
+            if (comments[index].id == commentId) {
+                comments[index].deleteComment = false
+                result = 1
+            }
+        }
+        return result
     }
 
     override fun copyItem(item: Note): Note = item.copy()
 }
 object WallService: CrudService<Post>() {
     var posts = mutableListOf<Post>()
-    var comments = mutableListOf<CommentOne>()
-    override fun copyItem (item: Post): Post = item.copy()
+    //var comments = mutableListOf<CommentOne>()
+    override fun copyItem(item: Post): Post = item.copy()
     fun clear() {
         posts.clear()
     }
 
 
 
-    fun likedById(id: Int) {
+    fun likedById(id: Int): Int {
+        var index: Int = 0
         for ((index, post) in posts.withIndex()) {
-            if (post.id == id && post.postLikes.canLikes == true && post.postLikes.userLikes == true && post.postLikes.canPublish == true) {
-                post.postLikes.count = post.postLikes.count++
-                posts[index] = post.copy(postLikes = post.postLikes.copy())
+            if (posts[index].id == id && posts[index].postLikes.canLikes == true) {
+                posts[index].postLikes.count++
+                //posts[index] = post.copy(postLikes = post.postLikes.copy())
             }
         }
+        return  posts[index].postLikes.count
     }
     fun print(){
         for (post in posts) {
@@ -224,21 +228,23 @@ object WallService: CrudService<Post>() {
         }
     }
     fun createCommentPost(postId: Int, postComments: CommentsPost ): CommentsPost {
-        var indexPost: Int= posts.size
-        try {
+        var index: Int = 0
+        //try {
             for ((index, post) in posts.withIndex()) {
-                if (posts[index].id == postId) {
-                    indexPost = index
-                    posts[index].postComments = postComments
+                try{
+                    if (posts[index].id == postId) {
+                        posts[index].postComments = postComments
+                    }
+                } catch (e: RuntimeException) {
+                    println("no commentArray on this post")
                 }
             }
-        } catch (e: RuntimeException) {
-            println("no commentArray on this post")
-        }
-        return posts[indexPost].postComments
+            return posts[index].postComments
+
     }
 }
 class PostNotFoundException(message: String): RuntimeException(message)
+
 data class Likes(
     var count: Int=0,//число пользователей, которым понравилась запись
     var userLikes: Boolean=false,//наличие отметки «Мне нравится» от текущего пользователя;
@@ -251,7 +257,7 @@ data class CommentsPost (
     var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
     var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
-    var Comments: Array <String> = arrayOf()
+    var CommentsArray: Array <String> = arrayOf()
 )
 data class CopyrightPost(
     var id: Int=0,
