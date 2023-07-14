@@ -105,7 +105,7 @@ object WallService{
     fun update(newPost:Post): Boolean {
         for ((index, post) in posts.withIndex()){
             if (post.id==newPost.id){
-                //posts[index]=post.copy(postComments = newPost.postComments.copy())
+                posts[post.id]=newPost.copy()
                 return true
             }
         }
@@ -117,21 +117,14 @@ object WallService{
         }
     }
     fun createComment(postId: Int, comment: String): String {
-        try {
             for ((index, post) in posts.withIndex()) {
                 if (post.id == postId) {
 
-                    post.postComments.Comments[++lastId]=comment
+                    post.postComments.Comments += comment
                 }
             }
-
-
-
-        }catch (e: RuntimeException ){
-            println("no commentArray on this post")
-        }
-        val post = posts.last()
-        return post.postComments.Comments[lastId]
+        val post = posts[postId] ?: throw PostNotFoundException("No post with &postId")
+        return post.postComments.Comments.last()
     }
 
 }
@@ -142,7 +135,7 @@ data class CommentsPost (
     var groupsCanPost: Boolean=false,//информация о том, могут ли сообщества комментировать запись
     var canClose: Boolean=false,// может ли текущий пользователь закрыть комментарии к записи
     var canOpen: Boolean=false,//может ли текущий пользователь открыть комментарии к записи
-    var Comments: Array <String> = arrayOf()
+    var Comments: Array <String> = emptyArray()//arrayOf()
 )
 data class Comment (
     var id: Int = 0,//Идентификатор комментария

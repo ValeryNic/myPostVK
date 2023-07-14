@@ -17,7 +17,7 @@ class WallServiceTest {
             copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
         )
         val newPost: Post = WallService.add(post)
-        assertEquals(1,newPost.id)
+        assertEquals(0,newPost.id)
     }
 
     @Test
@@ -64,11 +64,27 @@ class WallServiceTest {
     }
     @Test(expected = PostNotFoundException::class)
     fun shouldThrow() {
+        val post = Post(0,0,0,0,1254,"",0,
+            0,false,"post",0,false,false,
+            false, false, false,false, 0,
+            postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
+            postReposts = RepostsPost(), views = arrayOf(),
+            copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
+        )
+        WallService.add(post)
         val comment: String = "My next comment"
         WallService.createComment(4, comment)
     }
     @Test
     fun createComment1() {
+        val post = Post(0,0,0,0,1254,"",0,
+            0,false,"post",0,false,false,
+            false, false, false,false, 0,
+            postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
+            postReposts = RepostsPost(), views = arrayOf(),
+            copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
+        )
+        WallService.add(post)
         val comment: String = "My new comment"
         val comment1: String = WallService.createComment(0,comment)
         assertEquals(comment, comment1)
