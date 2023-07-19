@@ -30,7 +30,6 @@ class WallServiceTest {
             copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
         )
         WallService.add(post)
-        //val result=1
         val count:Double= Math.random()
         val newId: Int = (count * (WallService.lastId-1)).toInt()
         val newPost = WallService.posts[newId]

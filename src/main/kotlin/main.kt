@@ -117,14 +117,16 @@ object WallService{
         }
     }
     fun createComment(postId: Int, comment: String): String {
-            for ((index, post) in posts.withIndex()) {
-                if (post.id == postId) {
-
-                    post.postComments.Comments += comment
-                }
+        //var post:Post = posts[0]
+        var result: String = "No"
+        for ((index, post) in posts.withIndex()){
+            if (posts[index].id == postId) {
+                post.postComments.Comments += comment
+                posts[index]=post.copy() ?: throw PostNotFoundException("No post with $index")
+                result = post.postComments.Comments.last()
             }
-        val post = posts[postId] ?: throw PostNotFoundException("No post with &postId")
-        return post.postComments.Comments.last()
+        }
+        return result
     }
 
 }
