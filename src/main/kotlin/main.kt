@@ -60,69 +60,81 @@ data class Post(
 )
 
 data class Note(
-    var noteId: Int=0,
-    var ownerId: Int=0,
-    var title: String= "Нет заголовка",//Заголовок заметки.
-    var privacy: Int = 0,//Уровень доступа к заметке
-    var commentPrivacy: Int=0,//Уровень доступа к комментированию заметки
-    var message: String= "Нет комментария",//Текст комментария.
-    var text: String="Нет заметки"
-)
+    override var id: Int,
+    //var ownerId: Int,
+    var title: String,//Заголовок заметки.
+    var privacy: Int,//Уровень доступа к заметке
+    var commentPrivacy: Int,//Уровень доступа к комментированию заметки
+    var message: String,//Текст комментария.
+    var text: String,
+    var commentsId: Int//количество комментариев
+): Identifiable
 data class  CommentOne(
-    var id: Int=0,//Идентификатор комментария
-    var fromId: Int=0,//Идентификатор автора комментария.
-    var ownerId: Int=0,//идентификатор автора заметки
-    var date: Int=1524,//Дата создания комментария в формате Unixtime
-    var text: String="Нет комментария",//Текст комментария
-    var privacyComment: Int=0,
-    var deleteComment: Boolean=true
-)
+    override var id: Int,//Идентификатор комментария
+    var fromId: Int,//Идентификатор автора комментария.
+    //var ownerId: Int,//идентификатор автора заметки
+    var date: Int,//Дата создания комментария в формате Unixtime
+    var text: String,//Текст комментария
+    var privacyComment: Int,
+    var deleteComment: Boolean
+): Identifiable
+interface Identifiable{
+    var id:Int
+}
 
-abstract class CrudService<T>{
-    private val elems = mutableListOf<T>()
+abstract class CrudService<T: Identifiable>{
+    private var elems = mutableMapOf<Int, T>()
     private val id: Int=0
-    abstract fun copyItem(item: T): T
-    fun clear() {
-        elems.clear()
-    }
-    fun print(){
-        for (elem in elems) {
-            print(elem)
-        }
-    }
-    fun add(elem: T): T{
-        elems.add(copyItem(elem))
-        return elems.last()
+    abstract fun copyItem(elem: T): T
+//    fun clear() {
+//        elems.clear()
+//    }
+//    fun print(){
+//        for (elem in elems) {
+//            print(elem)
+//        }
+//    }
+    fun add(elem: T): T{//(title: String, val text: String, val privace: Int){//создает новую заметку у текущего пользователя
+        elems[elem.id] = copyItem(elem)
+        return elems[elem.id]!!
     }
     fun update(itemId: Int, elem: T): Boolean{
-        if (elems.contains(elems[itemId])){
+        if (elems.keys.contains(itemId)){
             elems[itemId] = elem
             return true
         } else{return false}
     }
     fun delete(itemId: Int): Boolean{
-        if (elems.contains(elems[itemId])){
-            elems.removeAt(itemId)
+        if (elems.keys.contains(itemId)){
+            elems.remove(itemId, elems[itemId])
             return true
         } else {return false}
     }
+
+    fun get(itemId: Int): T? {
+        if (elems.keys.contains(itemId)){
+            return  elems[itemId]
+        } else {
+            return null
+        }
+    }
 }
 object NoteService: CrudService<Note>() {
-    var notes = mutableListOf<Note>()
-    var comments = mutableListOf<CommentOne>()
+    var notes = mutableMapOf<Int, Note>()
+    var comments = mutableMapOf<Int, CommentOne>()
 
     override fun copyItem(item: Note): Note = item.copy()
-    fun add(ownerId: Int, title: String, text: String, privacy: Int, commentPrivacy: Int): Int {
-        val note = Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария", text)
-        notes.add(note)
-        return note.noteId
-    }
+//    fun add(ownerId: Int, title: String, text: String, privacy: Int, commentPrivacy: Int): Int {
+//        val note = Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария", text)
+//        notes.add(note)
+//        return note.noteId
+//    }
 
-    fun createComment(commentId: Int, fromId: Int, ownerId: Int, date: Int, message: String, privacyComment: Int): Int {
+    fun createComment(commentId: Int, fromId: Int, date: Int, message: String, privacyComment: Int): Int {
         var result = -1
-        for ((index, comment) in comments.withIndex()) {
-            if (comments[index].id == commentId) {
-                comments.add(CommentOne(comments.size, fromId, ownerId, date, message, privacyComment, false))
+        //for ((index, comment) in comments.withIndex()) {
+            if (comments.keys.contains(commentId)) {
+                result = NoteService<CommentOne>.add()//(CommentOne(comments.size, fromId, date, message, privacyComment, false))
                 result = comments.lastIndex
             }
         }
@@ -132,7 +144,7 @@ object NoteService: CrudService<Note>() {
     fun deleteNote(noteId: Int): Boolean {
         var result = false
         for ((index, note) in notes.withIndex()) {
-            if (notes[index].noteId == noteId) {
+            if (notes[index].id == noteId) {
                 result = delete(index)
             }
         }
@@ -220,7 +232,14 @@ object WallService: CrudService<Post>() {
     var posts = mutableListOf<Post>()
     //var comments = mutableListOf<CommentOne>()
     override fun copyItem(item: Post): Post = item.copy()
-
+    fun clear() {
+        posts.clear()
+    }
+    fun print(){
+        for (post in posts) {
+            print(post)
+        }
+    }
 
 
 
