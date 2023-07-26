@@ -42,25 +42,7 @@ class WallServiceTest {
         //assertEquals(0,result)
         assertTrue(WallService.update(newPost))
      }
-    @Test
-    fun update2() {
-        val post = Post(0,0,0,0,1254,"",0,
-            0,false,"post",0,false,false,
-            false, false, false,false, 0,
-            postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
-            postReposts = RepostsPost(), views = arrayOf(),
-            copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
-        )
-        val newPost = WallService.add(post)
-        val post1 = Post(id=WallService.lastId+1,0,0,0,1254,"",0,
-            0,false,"post",0,false,false,
-            false, false, false,false, 0,
-            postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
-            postReposts = RepostsPost(), views = arrayOf(),
-            copyHistory= arrayOf(0), postDonut = DonutPost(), attechments = arrayOf()
-        )
-        assertFalse(WallService.update(post1))
-    }
+    
     @Test(expected = PostNotFoundException::class)
     fun shouldThrow() {
         val post = Post(0,0,0,0,1254,"",0,

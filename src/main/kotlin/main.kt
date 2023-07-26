@@ -122,9 +122,9 @@ object WallService{
         for ((index, post) in posts.withIndex()){
             if (posts[index].id == postId) {
                 post.postComments.Comments += comment
-                posts[index]=post.copy() ?: throw PostNotFoundException("No post with $index")
-                result = post.postComments.Comments.last()
-            }
+                posts[index]=post.copy()
+                return post.postComments.Comments.last()
+            } else{throw PostNotFoundException("No post with $index")}
         }
         return result
     }
