@@ -187,15 +187,16 @@ object WallService: CrudService<Post>() {
     }
 
     fun createComment(postId: Int, comment: String): String {
-        var result: String = "No"
+        //var result: String = "No"
         for ((index, post) in posts.withIndex()){
             if (posts[index].id == postId) {
                 post.postComments.CommentsArray += comment
                 posts[index]=post.copy()
                 return post.postComments.CommentsArray.last()
-            } else{throw PostNotFoundException()}
+            }
         }
-        return result
+
+        return throw PostNotFoundException()
 
     }
 
