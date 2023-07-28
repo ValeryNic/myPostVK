@@ -16,7 +16,7 @@ class WallServiceTest {
             postReposts = RepostsPost(),
             postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
         )
-        val newPost: Post = WallService.add(post)
+        val newPost= WallService.add(post)
         assertEquals(post, newPost)
     }
 
@@ -30,13 +30,9 @@ class WallServiceTest {
             postReposts = RepostsPost(),
            postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
         )
-        WallService.add(post)
-        //val result=1
-        val count:Double= Math.random()
-        val newId: Int = (count * (WallService.posts.size-1)).toInt()
-        val newPost = WallService.posts[newId]
-        newPost.postComments.canPost = true
-        assertTrue(WallService.update(newId, newPost))
+        var post1 = WallService.add(post)
+        post.friendsOunly=true
+        assertTrue(WallService.update(post.id, post))
     }
 //    @Test
 //    fun update2() {
@@ -66,10 +62,9 @@ class WallServiceTest {
         postReposts = RepostsPost(),
         postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
     )
-        var posts = mutableListOf<Post>()
-        val post1=WallService.add(post)
+        var posts = mutableMapOf<Int,Post>()
+        var post1=WallService.add(post)
         val comment: String = "My comment for post"
-        val postComment: CommentsPost = CommentsPost(0,false,false,false,false, CommentsArray = arrayOf())
         post1.postComments.CommentsArray += comment
         post.postComments = WallService.createCommentPost(2, post1.postComments)
     }
@@ -82,14 +77,15 @@ class WallServiceTest {
             postReposts = RepostsPost(),
             postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
         )
-        var posts = mutableListOf<Post>()
+        //var posts = mutableMapOf<Int,Post>()
         var post1=WallService.add(post)
+        println(post1.id)
+        println(post.id)
+        val post2 = posts[0]
         val comment: String = "My comment for post"
-        //var postComment: CommentsPost = CommentsPost(0,false,false,false,false, CommentsArray = arrayOf())
-        post1.postComments.CommentsArray += comment
-        //post.postComments.CommentsArray[0]=comment
-        post.postComments = WallService.createCommentPost(0,post1.postComments)
-        val result = post.postComments.CommentsArray.last()
+        post.postComments.CommentsArray += comment
+        post1.postComments = WallService.createCommentPost(post.id,post.postComments)
+        val result = post1.postComments.CommentsArray.last()
         assertEquals(comment, result)
     }
 }

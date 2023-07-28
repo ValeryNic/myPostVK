@@ -1,5 +1,6 @@
 //import com.sun.tools.javac.util.JCDiagnostic
 import java.awt.Image
+import java.lang.NullPointerException
 import java.lang.RuntimeException
 import java.nio.charset.CoderResult
 import java.security.CodeSource
@@ -26,15 +27,15 @@ fun main () {
     //WallService.update(2, post)
     WallService.print()
     println(VideoAttachment(Video(1,0,"My story","Video about my life",2048)))
-    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site")
-    var noteId = NoteService.add(0,"my Note", "I live Net",0,0)
-    noteId = NoteService.add(1,"my Note1", "I live Net",0,0)
+    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+    var note1 = NoteService.add(note)
+
 }
 data class Post(
-    var id: Int=0,//Идентификатор записи.
-    var ownerId: Int=0,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
+    override var id: Int,//Идентификатор записи.
+    var ownerId: Int?,//Идентификатор владельца стены, на которой размещена запись. В версиях API ниже 5.7 это поле называется to_id.
     var fromId: Int?,//Идентификатор автора записи (от чьего имени опубликована запись).
-    var createdBy: Int=0,//Идентификатор администратора, который опубликовал запись (возвращается только для сообществ при запросе с ключом доступа администратора). Возвращается в записях, опубликованных менее 24 часов назад.
+    var createdBy: Int?,//Идентификатор администратора, который опубликовал запись (возвращается только для сообществ при запросе с ключом доступа администратора). Возвращается в записях, опубликованных менее 24 часов назад.
     var date: Int?,//Время публикации записи в формате unixtime.
     var text: String?,//Текст записи.
     var replyOwnerId: Int=0,//Идентификатор владельца записи, в ответ на которую была оставлена текущая.
@@ -57,11 +58,11 @@ data class Post(
     //var views: Array<Int> = arrayOf(0),
     //var copyHistory:Array<Int> = arrayOf(0),//<Random.DefaultHistory>, Массив, содержащий историю репостов для записи.
     var attechments: Array<Attechment> = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
-)
+): Identifiable
 
 data class Note(
     override var id: Int,
-    //var ownerId: Int,
+    var fromId: Int,
     var title: String,//Заголовок заметки.
     var privacy: Int,//Уровень доступа к заметке
     var commentPrivacy: Int,//Уровень доступа к комментированию заметки
@@ -72,7 +73,7 @@ data class Note(
 data class  CommentOne(
     override var id: Int,//Идентификатор комментария
     var fromId: Int,//Идентификатор автора комментария.
-    //var ownerId: Int,//идентификатор автора заметки
+    var ownerId: Int,//идентификатор автора заметки
     var date: Int,//Дата создания комментария в формате Unixtime
     var text: String,//Текст комментария
     var privacyComment: Int,
@@ -82,9 +83,11 @@ interface Identifiable{
     var id:Int
 }
 
-abstract class CrudService<T: Identifiable>{
+abstract class CrudService<T:Identifiable>{
+    private var id: Int=0
+
     private var elems = mutableMapOf<Int, T>()
-    private val id: Int=0
+
     abstract fun copyItem(elem: T): T
 //    fun clear() {
 //        elems.clear()
@@ -95,7 +98,7 @@ abstract class CrudService<T: Identifiable>{
 //        }
 //    }
     fun add(elem: T): T{//(title: String, val text: String, val privace: Int){//создает новую заметку у текущего пользователя
-        elems[elem.id] = copyItem(elem)
+        elems[id] = copyItem(elem)
         return elems[elem.id]!!
     }
     fun update(itemId: Int, elem: T): Boolean{
@@ -122,114 +125,41 @@ abstract class CrudService<T: Identifiable>{
 object NoteService: CrudService<Note>() {
     var notes = mutableMapOf<Int, Note>()
     var comments = mutableMapOf<Int, CommentOne>()
-
+    class NoCommentException: RuntimeException("No comment with &commentId")
+    class NoNoteException: RuntimeException("No note with &id")
     override fun copyItem(item: Note): Note = item.copy()
-//    fun add(ownerId: Int, title: String, text: String, privacy: Int, commentPrivacy: Int): Int {
-//        val note = Note(notes.size, ownerId, title, privacy, commentPrivacy, "Нет комментария", text)
-//        notes.add(note)
-//        return note.noteId
-//    }
-
-    fun createComment(commentId: Int, fromId: Int, date: Int, message: String, privacyComment: Int): Int {
-        var result = -1
-        //for ((index, comment) in comments.withIndex()) {
-            if (comments.keys.contains(commentId)) {
-                result = NoteService<CommentOne>.add()//(CommentOne(comments.size, fromId, date, message, privacyComment, false))
-                result = comments.lastIndex
-            }
-        }
-        return result
+    fun createComment(commentId: Int, fromId: Int, ownerId: Int, date: Int, message: String, privacyComment: Int):Int {
+        var note = notes[ownerId]?: throw NoNoteException()
+        note.commentsId++
+        notes[ownerId] = NoteService.copyItem(note)
+        notes[ownerId]?.message=message
+        var comment = comments.getOrPut(commentId){CommentOne(comments.size, fromId, ownerId,date,message,privacyComment,false)}
+        return comment.id
     }
-
-    fun deleteNote(noteId: Int): Boolean {
-        var result = false
-        for ((index, note) in notes.withIndex()) {
-            if (notes[index].id == noteId) {
-                result = delete(index)
-            }
-        }
-        return result
-    }
-
-    fun deleteComment(commentId: Int): Boolean {
-        var result = false
-        for ((index, comment) in comments.withIndex()) {
-            if (comments[index].id == commentId) {
-                comments[index].deleteComment = true
-                result = true
-            }
-        }
-        return result
-    }
-
     fun edit(noteId: Int, note: Note): Boolean { //Редактирует заметку текущего пользователя.
-        var result = false
-        for ((index, note) in notes.withIndex()) {
-            if (notes[index].noteId == noteId) {
-                result = NoteService.update(noteId, note)
-            }
-        }
-        return result
+        return NoteService.update(noteId,note)
     }
-
     fun editComment(commentId: Int, comment: CommentOne): Boolean {//Редактирует указанный комментарий у заметки.
-        var result = false
-        for ((index, comment) in comments.withIndex()) {
-            if (comments[index].id == commentId) {
-                comments[index] = comment
-                result = true
-            }
-        }
-        return result
+        if (comments.containsKey(commentId)) {
+            comments[commentId] = comment
+            return true
+        } else { return false}
     }
+    fun getUserNotes(fromId: Int)=(notes.values.map{it.fromId==fromId}?: throw NoNoteException()) as MutableMap<Int,Note>//Возвращает список заметок, созданных пользователем.
 
-    fun get(ownerId: Int): MutableList<Note>? {
-        var notesOwnerId = mutableListOf<Note>()
-        for ((index, note) in notes.withIndex()) {
-            if (note.ownerId == ownerId) {
-                notesOwnerId.add(note)
-            }
-        }
-        return notesOwnerId
-    }
 
-    fun getById(noteId: Int): Note {
-        var result = notes[notes.size]
-        for ((index, note) in notes.withIndex()) {
-            if (notes[index].noteId == noteId) {
-                result = notes[index]
-            }
-        }
-        return result
-    }
+    fun getById(noteId: Int)=notes[noteId]?: throw NoNoteException()//Возвращает заметку по её id
 
-    fun getComments(noteId: Int): Array<CommentOne>? {
-        var commentArray = emptyArray<CommentOne>()
-        for ((index, note) in notes.withIndex()) {
-            if (notes[index].noteId == noteId) {
-                for ((indexComment, comment) in comments.withIndex()) {
-                    if (comments[indexComment].ownerId == notes[index].ownerId) {
-                        commentArray += comments[indexComment]
-                    }
-                }
-            }
-        }
-        return commentArray
-    }
+    fun getComments(id: Int)=(comments.values.map { it.ownerId=id}) as Array<CommentOne>//Возвращает список комментариев к заметке
 
     fun restoreComment(commentId: Int): Int {
-        var result = -1
-        for ((index, comment) in comments.withIndex()) {
-            if (comments[index].id == commentId) {
-                comments[index].deleteComment = false
-                result = 1
-            }
-        }
-        return result
+        comments[commentId]?.deleteComment = false ?: throw NoCommentException()
+        return  1
     }
+
 }
 object WallService: CrudService<Post>() {
-    var posts = mutableListOf<Post>()
+    var posts = mutableMapOf<Int,Post>()
     //var comments = mutableListOf<CommentOne>()
     override fun copyItem(item: Post): Post = item.copy()
     fun clear() {
@@ -245,28 +175,22 @@ object WallService: CrudService<Post>() {
 
     fun likedById(id: Int): Int {
         var result = 0
-        for ((index, post) in posts.withIndex()) {
-            if (posts[index].id == id && posts[index].postLikes.canLikes == true) {
-                posts[index].postLikes.count++
-                result = posts[index].postLikes.count
-                //posts[index] = post.copy(postLikes = post.postLikes.copy())
-            }
-        }
+            if (posts.containsKey(id) && posts[id]!!.postLikes.canLikes == true) {
+                posts[id]!!.postLikes.count++
+                result = posts[id]!!.postLikes.count
+            } else {result=0}
         return  result
     }
 
     fun createCommentPost(postId: Int, postComments: CommentsPost ): CommentsPost {
-        var result = CommentsPost()
-        for ((index, post) in posts.withIndex()) {
-                if (posts[index].id == postId) {
-                    posts[index].postComments = postComments
-                }
-            result = postComments
-        }
-        return result
+        val post = posts[postId]?: throw  PostNotFoundException()
+        val myComment = posts[postId]?.postComments?.CommentsArray?.last()?: throw MyCommentException()
+        posts[postId]?.postComments = postComments
+        return posts[postId]!!.postComments
     }
 }
-class PostNotFoundException(message: String): RuntimeException(message)
+class PostNotFoundException: RuntimeException("No post with id")
+class MyCommentException: RuntimeException("No post with id")
 
 data class Likes(
     var count: Int=0,//число пользователей, которым понравилась запись
