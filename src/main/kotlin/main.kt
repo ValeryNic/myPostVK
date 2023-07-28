@@ -20,9 +20,9 @@ fun main () {
     WallService.add(post1)
     WallService.likedById(post.id)
     post.id = 1
-    post.postComments.CommentsArray += "My comment1"
     WallService.add(post)
-    WallService.createCommentPost(1, post.postComments)
+    post.postComments.CommentsArray += "My comment1"
+    //WallService.createCommentPost(1, post.postComments.CommentsArray.last())
     WallService.update(1, post)
     //WallService.update(2, post)
     WallService.print()
@@ -159,7 +159,7 @@ object NoteService: CrudService<Note>() {
 
 }
 object WallService: CrudService<Post>() {
-    var posts = mutableMapOf<Int,Post>()
+    var posts = mutableListOf<Post>()
     //var comments = mutableListOf<CommentOne>()
     override fun copyItem(item: Post): Post = item.copy()
     fun clear() {
@@ -170,27 +170,38 @@ object WallService: CrudService<Post>() {
             print(post)
         }
     }
-
+    fun addPost(post: Post): Post {
+        posts.add(posts.size, post)
+        return posts.last()
+    }
 
 
     fun likedById(id: Int): Int {
         var result = 0
-            if (posts.containsKey(id) && posts[id]!!.postLikes.canLikes == true) {
-                posts[id]!!.postLikes.count++
-                result = posts[id]!!.postLikes.count
+        for ((index, post) in posts.withIndex())
+            if (posts[index].id == id && posts[index].postLikes.canLikes == true) {
+                posts[id].postLikes.count++
+                result = posts[id].postLikes.count
             } else {result=0}
         return  result
     }
 
-    fun createCommentPost(postId: Int, postComments: CommentsPost ): CommentsPost {
-        val post = posts[postId]?: throw  PostNotFoundException()
-        val myComment = posts[postId]?.postComments?.CommentsArray?.last()?: throw MyCommentException()
-        posts[postId]?.postComments = postComments
-        return posts[postId]!!.postComments
+    fun createComment(postId: Int, comment: String): String {
+        var result: String = "No"
+        for ((index, post) in posts.withIndex()){
+            if (posts[index].id == postId) {
+                post.postComments.CommentsArray += comment
+                posts[index]=post.copy()
+                return post.postComments.CommentsArray.last()
+            } else{throw PostNotFoundException()}
+        }
+        return result
+
     }
+
 }
 class PostNotFoundException: RuntimeException("No post with id")
-class MyCommentException: RuntimeException("No post with id")
+class MyCommentException: RuntimeException("No array with id")
 
 data class Likes(
     var count: Int=0,//число пользователей, которым понравилась запись
