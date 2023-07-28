@@ -19,7 +19,7 @@ fun main (){
     WallService.update(post)
     post.id=1
     post.postComments.Comments[post.postComments.count] = "I like this post"
-    val lastComment = WallService.createComment(1, post.postComments.Comments.last()) ?: throw PostNotFoundException("no commentArray on this post")
+    val lastComment = WallService.createComment(1, post.postComments.Comments.last()) ?: throw PostNotFoundException()
     WallService.update(post)
 
 
@@ -117,20 +117,19 @@ object WallService{
         }
     }
     fun createComment(postId: Int, comment: String): String {
-        //var post:Post = posts[0]
         var result: String = "No"
         for ((index, post) in posts.withIndex()){
             if (posts[index].id == postId) {
                 post.postComments.Comments += comment
                 posts[index]=post.copy()
                 return post.postComments.Comments.last()
-            } else{throw PostNotFoundException("No post with $index")}
+            }
         }
-        return result
+        return throw PostNotFoundException()
     }
 
 }
-class PostNotFoundException(message: String): RuntimeException(message)
+class PostNotFoundException: RuntimeException("No post with id")
 data class CommentsPost (
     var count: Int=0,//количество комментариев
     var canPost: Boolean=false,//информация о том, может ли текущий пользователь комментировать запись
