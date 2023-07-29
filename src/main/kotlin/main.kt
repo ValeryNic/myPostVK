@@ -8,28 +8,31 @@ import java.util.Objects
 import javax.xml.stream.events.Comment
 fun main () {
 
-    var post = Post(0,0,0,0,1254,"",0,
-        0,false,"post",0,false,false,
-        false, false, false,false, 0,
-        postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
-         postReposts = RepostsPost(), postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
-    )
-    WallService.add(post)
-    var post1=WallService.copyItem(post)
-    post1.ownerId=1
-    WallService.add(post1)
-    WallService.likedById(post.id)
-    post.id = 1
-    WallService.add(post)
-    post.postComments.CommentsArray += "My comment1"
-    //WallService.createCommentPost(1, post.postComments.CommentsArray.last())
-    WallService.update(1, post)
-    //WallService.update(2, post)
-    WallService.print()
-    println(VideoAttachment(Video(1,0,"My story","Video about my life",2048)))
+//    var post = Post(0,0,0,0,1254,"",0,
+//        0,false,"post",0,false,false,
+//        false, false, false,false, 0,
+//        postComments = CommentsPost(), postLikes = Likes(), postCopyright = CopyrightPost(),
+//         postReposts = RepostsPost(), postDonut = DonutPost(), attechments = arrayOf(VideoAttachment(Video(1,1,"My story", "Video", 2048)),  AudioAttachment(Audio(0,0,"Paul McCartny")))
+//    )
+//    WallService.add(post)
+//    var post1=WallService.copyItem(post)
+//    post1.ownerId=1
+//    WallService.add(post1)
+//    WallService.likedById(post.id)
+//    post.id = 1
+//    WallService.add(post)
+//    post.postComments.CommentsArray += "My comment1"
+//    //WallService.createCommentPost(1, post.postComments.CommentsArray.last())
+//    WallService.update(1, post)
+//    //WallService.update(2, post)
+//    WallService.print()
+//    println(VideoAttachment(Video(1,0,"My story","Video about my life",2048)))
     var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
     var note1 = NoteService.add(note)
-
+    note1.title = "New programm"
+    val note2 = NoteService.add(note1)
+    println(note.title)
+    println(note1.title)
 }
 data class Post(
     override var id: Int,//Идентификатор записи.
@@ -97,9 +100,11 @@ abstract class CrudService<T:Identifiable>{
 //            print(elem)
 //        }
 //    }
+    class NoElemException: RuntimeException("No elem with id")
     fun add(elem: T): T{//(title: String, val text: String, val privace: Int){//создает новую заметку у текущего пользователя
-        elems[id] = copyItem(elem)
-        return elems[elem.id]!!
+        elem.id = elems.size
+        elems[elem.id] = copyItem(elem)
+        return elems[elem.id] ?: throw NoElemException()
     }
     fun update(itemId: Int, elem: T): Boolean{
         if (elems.keys.contains(itemId)){
@@ -125,16 +130,20 @@ abstract class CrudService<T:Identifiable>{
 object NoteService: CrudService<Note>() {
     var notes = mutableMapOf<Int, Note>()
     var comments = mutableMapOf<Int, CommentOne>()
-    class NoCommentException: RuntimeException("No comment with &commentId")
-    class NoNoteException: RuntimeException("No note with &id")
+    class NoCommentException: RuntimeException("No comment with id")
+    class NoNoteException: RuntimeException("No note with id")
     override fun copyItem(item: Note): Note = item.copy()
-    fun createComment(commentId: Int, fromId: Int, ownerId: Int, date: Int, message: String, privacyComment: Int):Int {
-        var note = notes[ownerId]?: throw NoNoteException()
+    fun clear(){
+        notes.clear()
+    }
+    fun createComment(comment: CommentOne):CommentOne {
+        println("AddId = ${comment.ownerId}")
+        var note = notes[comment.ownerId]?: throw NoNoteException()
         note.commentsId++
-        notes[ownerId] = NoteService.copyItem(note)
-        notes[ownerId]?.message=message
-        var comment = comments.getOrPut(commentId){CommentOne(comments.size, fromId, ownerId,date,message,privacyComment,false)}
-        return comment.id
+        notes[comment.ownerId] = NoteService.copyItem(note)
+        notes[comment.ownerId]?.message=comment.text
+        var comment1 = comments.getOrPut(comment.id){CommentOne(comments.size, comment.fromId, comment.ownerId,comment.date,comment.text,comment.privacyComment,false)}
+        return comment1
     }
     fun edit(noteId: Int, note: Note): Boolean { //Редактирует заметку текущего пользователя.
         return NoteService.update(noteId,note)

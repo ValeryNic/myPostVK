@@ -2,6 +2,29 @@ import org.junit.Test
 import org.junit.Before
 import org.junit.Assert.*
 
+class NoteServiceTest{
+    @Before
+    fun clearBeforeTestNote(){
+        NoteService.clear()
+    }
+    @Test
+    fun  createCommentAddNotesCommentsId() {
+        var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+        var note1 = NoteService.add(note)
+        var comment: CommentOne = CommentOne(0,0,note1.id,1524,"Yes, yes",0,false)
+        var newCommentId = NoteService.createComment(comment)
+        val note2 = NoteService.get(0)
+        assertEquals(1, note2?.commentsId )
+    }
+    @Test
+    fun  createCommentInComments() {
+        var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+        var comment: CommentOne = CommentOne(0,0,0,1524,"Yes, yes",0,false)
+        var note1 = NoteService.add(note)
+        var newComment = NoteService.createComment(comment)
+        assertEquals(comment, newComment )
+    }
+}
 class WallServiceTest {
     @Before
     fun clearBeforeTest() {
