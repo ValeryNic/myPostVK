@@ -27,12 +27,16 @@ fun main () {
 //    //WallService.update(2, post)
 //    WallService.print()
 //    println(VideoAttachment(Video(1,0,"My story","Video about my life",2048)))
-    var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+    var note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
     var note1 = NoteService.add(note)
     note1.title = "New programm"
     val note2 = NoteService.add(note1)
-    println(note.title)
-    println(note1.title)
+    var comment = CommentOne(0,0,0,1524,"firstComment",0,false)
+    //val comment1 = NoteService.createComment(comment)
+    note = NoteService.getById(0)
+    println(note.commentsId)
+    //println(comment1.text)
+    //println(comment1.deleteComment)
 }
 data class Post(
     override var id: Int,//Идентификатор записи.
@@ -86,12 +90,12 @@ interface Identifiable{
     var id:Int
 }
 
-abstract class CrudService<T:Identifiable>{
-    private var id: Int=0
-
-    private var elems = mutableMapOf<Int, T>()
-
-    abstract fun copyItem(elem: T): T
+//abstract class CrudService<T:Identifiable>{
+//    private var id: Int=0
+//
+//     var elems = mutableMapOf<Int, T>()
+//
+//    abstract fun copyItem(elem: T): T
 //    fun clear() {
 //        elems.clear()
 //    }
@@ -100,48 +104,52 @@ abstract class CrudService<T:Identifiable>{
 //            print(elem)
 //        }
 //    }
-    class NoElemException: RuntimeException("No elem with id")
-    fun add(elem: T): T{//(title: String, val text: String, val privace: Int){//создает новую заметку у текущего пользователя
-        elem.id = elems.size
-        elems[elem.id] = copyItem(elem)
-        return elems[elem.id] ?: throw NoElemException()
-    }
-    fun update(itemId: Int, elem: T): Boolean{
-        if (elems.keys.contains(itemId)){
-            elems[itemId] = elem
-            return true
-        } else{return false}
-    }
-    fun delete(itemId: Int): Boolean{
-        if (elems.keys.contains(itemId)){
-            elems.remove(itemId, elems[itemId])
-            return true
-        } else {return false}
-    }
-
-    fun get(itemId: Int): T? {
-        if (elems.keys.contains(itemId)){
-            return  elems[itemId]
-        } else {
-            return null
-        }
-    }
-}
-object NoteService: CrudService<Note>() {
-    var notes = mutableMapOf<Int, Note>()
-    var comments = mutableMapOf<Int, CommentOne>()
+//    class NoElemException: RuntimeException("No elem with id")
+//    fun add(elem: T): T{//(title: String, val text: String, val privace: Int){//создает новую заметку у текущего пользователя
+//        elem.id = elems.size
+//        elems[elem.id] = copyItem(elem)
+//        return elems[elem.id] ?: throw NoElemException()
+//    }
+//    fun update(itemId: Int, elem: T): Boolean{
+//        if (elems.keys.contains(itemId)){
+//            elems[itemId] = elem
+//            return true
+//        } else{return false}
+//    }
+//    fun delete(itemId: Int): Boolean{
+//        if (elems.keys.contains(itemId)){
+//            elems.remove(itemId, elems[itemId])
+//            return true
+//        } else {return false}
+//    }
+//
+//    fun get(itemId: Int): T? {
+//        if (elems.keys.contains(itemId)){
+//            return  elems[itemId]
+//        } else {
+//            return null
+//        }
+//    }
+//}
+class NoteService <Note, Identifiable> {
+    public  var notes = mutableMapOf<Int, Note>()
+    public var comments = mutableMapOf<Int, CommentOne>()
     class NoCommentException: RuntimeException("No comment with id")
     class NoNoteException: RuntimeException("No note with id")
-    override fun copyItem(item: Note): Note = item.copy()
+//    override fun copyItem(item: Note): Note = item.copy()
     fun clear(){
         notes.clear()
+    }
+    fun add(note: Note){
+        note.id = notes.size
+        val
     }
     fun createComment(comment: CommentOne):CommentOne {
         println("AddId = ${comment.ownerId}")
         var note = notes[comment.ownerId]?: throw NoNoteException()
         note.commentsId++
+        note.message = comment.text
         notes[comment.ownerId] = NoteService.copyItem(note)
-        notes[comment.ownerId]?.message=comment.text
         var comment1 = comments.getOrPut(comment.id){CommentOne(comments.size, comment.fromId, comment.ownerId,comment.date,comment.text,comment.privacyComment,false)}
         return comment1
     }
@@ -167,10 +175,10 @@ object NoteService: CrudService<Note>() {
     }
 
 }
-object WallService: CrudService<Post>() {
+object class WallService<Post>() {
     var posts = mutableListOf<Post>()
     //var comments = mutableListOf<CommentOne>()
-    override fun copyItem(item: Post): Post = item.copy()
+    //override fun copyItem(item: Post): Post = item.copy()
     fun clear() {
         posts.clear()
     }

@@ -7,9 +7,14 @@ class NoteServiceTest{
     fun clearBeforeTestNote(){
         NoteService.clear()
     }
+    fun add1(){
+        var note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+        var note1 = NoteService.add(note)
+        assertEquals("About Netology",note1.title)
+    }
     @Test
     fun  createCommentAddNotesCommentsId() {
-        var note: Note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
+        var note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
         var note1 = NoteService.add(note)
         var comment: CommentOne = CommentOne(0,0,note1.id,1524,"Yes, yes",0,false)
         var newCommentId = NoteService.createComment(comment)
@@ -23,6 +28,10 @@ class NoteServiceTest{
         var note1 = NoteService.add(note)
         var newComment = NoteService.createComment(comment)
         assertEquals(comment, newComment )
+    }
+    @Test
+    fun edit1() {
+
     }
 }
 class WallServiceTest {
