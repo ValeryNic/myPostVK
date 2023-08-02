@@ -28,14 +28,16 @@ fun main () {
 //    WallService.print()
 //    println(VideoAttachment(Video(1,0,"My story","Video about my life",2048)))
     var note = Note(0, 0,"About Netology",0,0,"", "Netology is a good site",0)
-    var note1 = NoteService.add(note)
-    note1.title = "New programm"
-    val note2 = NoteService.add(note1)
+    NoteService.add(note.copy())
+    note.title = "New programm"
+    NoteService.add(note.copy())
+    println(NoteService.notes[0]!!.title)
+    println(NoteService.notes[1]!!.title)
     var comment = CommentOne(0,0,0,1524,"firstComment",0,false)
-    //val comment1 = NoteService.createComment(comment)
-    note = NoteService.getById(0)
-    println(note.commentsId)
-    //println(comment1.text)
+    val comment1 = NoteService.createComment(comment.copy())
+    //note = NoteService.getById(0)
+    //println(note.commentsId)
+    println(comment1.text)
     //println(comment1.deleteComment)
 }
 data class Post(
@@ -131,51 +133,88 @@ interface Identifiable{
 //        }
 //    }
 //}
-class NoteService <Note, Identifiable> {
-    public  var notes = mutableMapOf<Int, Note>()
-    public var comments = mutableMapOf<Int, CommentOne>()
+object NoteService{
+    var notes = mutableMapOf<Int, Note>()
+    var comments = mutableMapOf<Int, CommentOne>()
+    var notesOfUser = mutableListOf<Note>()
     class NoCommentException: RuntimeException("No comment with id")
     class NoNoteException: RuntimeException("No note with id")
 //    override fun copyItem(item: Note): Note = item.copy()
     fun clear(){
         notes.clear()
     }
-    fun add(note: Note){
+    fun add(note: Note){//Создает новую заметку у текущего пользователя.
         note.id = notes.size
-        val
+        notes[note.id] = note
     }
-    fun createComment(comment: CommentOne):CommentOne {
-        println("AddId = ${comment.ownerId}")
+    fun createComment(comment: CommentOne):CommentOne {//Добавляет новый комментарий к заметке.
+        //println("AddId = ${comment.ownerId}")
         var note = notes[comment.ownerId]?: throw NoNoteException()
         note.commentsId++
         note.message = comment.text
-        notes[comment.ownerId] = NoteService.copyItem(note)
+        notes[comment.ownerId] = note
         var comment1 = comments.getOrPut(comment.id){CommentOne(comments.size, comment.fromId, comment.ownerId,comment.date,comment.text,comment.privacyComment,false)}
         return comment1
     }
+    fun delete(id: Int): Int{
+        var result =1
+        if (notes.containsKey(id)){
+            val remove = notes.remove(id)
+            //comments.values.removeAll(comments.filter{it.value.ownerId==id}.values.)
+            comments = comments.filter{ it.value.ownerId != id }.toMap(mutableMapOf())
+
+        } else {throw NoNoteException()}
+        return  result
+    }
+    fun deleteComment(commentId: Int): Int {
+        var result = 1
+        if (comments.containsKey(commentId)) {
+            comments[commentId]!!.deleteComment = true
+        } else{result = -1}
+        return result
+    }
+
     fun edit(noteId: Int, note: Note): Boolean { //Редактирует заметку текущего пользователя.
-        return NoteService.update(noteId,note)
+        if (notes.containsKey(noteId)) {
+            notes[noteId] = note.copy()
+            return true
+        } else {return false}
     }
     fun editComment(commentId: Int, comment: CommentOne): Boolean {//Редактирует указанный комментарий у заметки.
         if (comments.containsKey(commentId)) {
-            comments[commentId] = comment
+            comments[commentId] = comment.copy()
             return true
         } else { return false}
     }
-    fun getUserNotes(fromId: Int)=(notes.values.map{it.fromId==fromId}?: throw NoNoteException()) as MutableMap<Int,Note>//Возвращает список заметок, созданных пользователем.
+    fun get(fromId: Int) = (notes.values.map{it.fromId==fromId}?: throw NoNoteException()) as MutableList<Note>//Возвращает список заметок, созданных пользователем.
 
 
-    fun getById(noteId: Int)=notes[noteId]?: throw NoNoteException()//Возвращает заметку по её id
 
-    fun getComments(id: Int)=(comments.values.map { it.ownerId=id}) as Array<CommentOne>//Возвращает список комментариев к заметке
+    fun getById(noteId: Int) =notes[noteId]?.copy()?: throw NoNoteException()//Возвращает заметку по её id
 
+    fun getComments(id: Int): MutableMap <Int, CommentOne> {
+        var result = mutableMapOf<Int,CommentOne>()
+       //=comments.values.map { it.ownerId == id }
+        //return .take(comments.values.map { it.text }.withIndex()) as Array<String>//Возвращает список комментариев к заметке
+        //val list = listOf(comments.filter { it.value.ownerId == id }.filterTo(Array<String>)
+        for ((index,comment) in comments) {
+            if (comment.ownerId == id) {
+                result.put(index, comment)
+            }
+        }
+        return result
+    }
     fun restoreComment(commentId: Int): Int {
-        comments[commentId]?.deleteComment = false ?: throw NoCommentException()
-        return  1
+        if (comments.containsKey(commentId)) {
+            comments[commentId]?.deleteComment = false ?: throw NoCommentException()
+            return 1
+        } else {
+            return -1
+        }
     }
 
 }
-object class WallService<Post>() {
+object WallService {
     var posts = mutableListOf<Post>()
     //var comments = mutableListOf<CommentOne>()
     //override fun copyItem(item: Post): Post = item.copy()
@@ -190,6 +229,16 @@ object class WallService<Post>() {
     fun addPost(post: Post): Post {
         posts.add(posts.size, post)
         return posts.last()
+    }
+    fun updatePost(id: Int,post: Post): Boolean {
+        var result = false
+        for ((index, post) in posts.withIndex()){
+            if (posts[index].id == id) {
+                posts[index] = post
+                result = true
+            }
+        }
+        return result
     }
 
 
