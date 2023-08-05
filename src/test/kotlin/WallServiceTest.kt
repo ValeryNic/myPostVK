@@ -29,6 +29,10 @@ class NoteServiceTest{
         NoteService.add(note.copy())
         var comment = CommentOne(0,0,note.id,1524,"Yes, yes",0,false)
         var comment1 = NoteService.createComment(comment.copy())
+        comment.text = "Netology is a good, ok"
+        comment1 = NoteService.createComment(comment.copy())
+        println(comment.text)
+        println(comment1.text)
         assertEquals(comment, comment1 )
     }
     @Test

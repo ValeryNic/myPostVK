@@ -153,7 +153,10 @@ object NoteService{
         note.commentsId++
         note.message = comment.text
         notes[comment.ownerId] = note
+        //comment.id = comments.size
         var comment1 = comments.getOrPut(comment.id){CommentOne(comments.size, comment.fromId, comment.ownerId,comment.date,comment.text,comment.privacyComment,false)}
+        comment1.text=comment.text
+
         return comment1
     }
     fun delete(id: Int): Int{
